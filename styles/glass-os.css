@@ -2049,85 +2049,6 @@ a {
   color: var(--text-dim);
 }
 
-.system-log-window {
-  border-color: rgba(122, 162, 255, 0.34);
-}
-
-.system-log-list {
-  display: grid;
-  gap: 10px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  font-family: var(--mono);
-}
-
-.log-entry {
-  display: grid;
-  grid-template-columns: 10px 58px 1fr;
-  gap: 8px;
-  align-items: baseline;
-  min-width: 0;
-  color: var(--text-muted);
-  font-size: 0.74rem;
-  line-height: 1.35;
-}
-
-.log-entry time {
-  color: var(--text-dim);
-}
-
-.log-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 999px;
-  background: currentColor;
-  box-shadow: 0 0 12px currentColor;
-}
-
-.log-entry[data-tone="mint"] {
-  color: var(--accent-mint);
-}
-
-.log-entry[data-tone="blue"] {
-  color: var(--accent-blue);
-}
-
-.log-entry[data-tone="purple"] {
-  color: var(--accent-purple);
-}
-
-.log-entry[data-tone="yellow"] {
-  color: var(--accent-yellow);
-}
-
-.monitor-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  margin-top: 18px;
-  font-family: var(--mono);
-}
-
-.monitor-grid span {
-  display: flex;
-  min-height: 34px;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 0 10px;
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.035);
-  color: var(--text-muted);
-  font-size: 0.72rem;
-}
-
-.monitor-grid strong {
-  color: var(--accent-mint);
-  font-weight: 700;
-}
-
 .taskbar {
   position: fixed;
   z-index: 35;
@@ -2498,22 +2419,6 @@ a {
   .detail-slot {
     grid-column: 2;
   }
-
-  .desktop-layout .system-log-window {
-    position: static;
-    grid-row: auto;
-    grid-column: auto;
-  }
-
-  .desktop-layout .system-log-window .window-body {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(220px, 320px);
-    gap: 18px;
-  }
-
-  .monitor-grid {
-    margin-top: 0;
-  }
 }
 
 @media (max-width: 860px) {
@@ -2529,8 +2434,7 @@ a {
 
   .center-stack,
   .detail-slot,
-  .desktop-icons,
-  .desktop-layout .system-log-window {
+  .desktop-icons {
     width: 100%;
   }
 
@@ -2551,10 +2455,6 @@ a {
     order: 4;
   }
 
-  .desktop-layout .system-log-window {
-    order: 5;
-  }
-
   .app-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 12px 8px;
@@ -2571,14 +2471,6 @@ a {
   .top-menu-item:nth-of-type(n + 4),
   .data-mode {
     display: none;
-  }
-
-  .desktop-layout .system-log-window .window-body {
-    display: block;
-  }
-
-  .monitor-grid {
-    margin-top: 16px;
   }
 
   .window-layer {
@@ -3208,8 +3100,7 @@ body::before {
 .welcome-window,
 .app-detail-window,
 .system-folder-window,
-.music-player-window,
-.system-log-window {
+.music-player-window {
   border-color: var(--glass-border);
 }
 
@@ -3269,8 +3160,7 @@ body::before {
 .local-audio-track,
 .local-audio-saved-state,
 .local-audio-size-control,
-.synth-panel,
-.monitor-grid span {
+.synth-panel {
   border-color: rgba(255, 255, 255, 0.7);
   background: rgba(255, 255, 255, 0.56);
   color: var(--text-main);
@@ -3411,18 +3301,15 @@ body::before {
   background: linear-gradient(180deg, var(--accent-blue), var(--accent-pink));
 }
 
-.track-led,
-.log-dot {
+.track-led {
   box-shadow: 0 0 0 4px color-mix(in srgb, currentColor, transparent 82%);
 }
 
-.track-mint,
-.log-entry[data-tone="mint"] {
+.track-mint {
   color: var(--accent-emerald);
 }
 
-.track-yellow,
-.log-entry[data-tone="yellow"] {
+.track-yellow {
   color: var(--accent-amber);
 }
 
@@ -3540,23 +3427,6 @@ body::before {
 .status-archived {
   background: #e2e8f0;
   color: #475569;
-}
-
-.system-log-list,
-.monitor-grid {
-  font-family: var(--mono);
-}
-
-.system-log-list {
-  color: var(--text-muted);
-}
-
-.log-entry {
-  color: var(--text-muted);
-}
-
-.monitor-grid strong {
-  color: var(--accent-blue);
 }
 
 .taskbar {
@@ -4087,11 +3957,19 @@ body::before {
   flex: 0 0 auto;
   white-space: nowrap;
   will-change: transform;
-  /* 우 → 좌 이동. 동일 목록 2벌을 이어붙였으므로 -50% 지점에서 끊김 없이 반복. */
+}
+
+/* 최초 진입: 화면 우측 바깥에서 안으로 슬라이드. 뷰포트 폭 기준이라 컨테이너 폭과 무관하게 항상 화면 밖에서 시작. */
+.crypto-ticker-track.is-entering {
+  animation: crypto-ticker-enter 1100ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* 진입이 끝난 뒤: 우 → 좌 무한 루프. 동일 목록 2벌을 이어붙였으므로 -50% 지점에서 끊김 없이 반복. */
+.crypto-ticker-track.is-looping {
   animation: crypto-ticker-scroll 42s linear infinite;
 }
 
-.crypto-ticker:hover .crypto-ticker-track {
+.crypto-ticker:hover .crypto-ticker-track.is-looping {
   animation-play-state: paused;
 }
 
@@ -4151,6 +4029,15 @@ body::before {
   }
   to {
     transform: translateX(-50%);
+  }
+}
+
+@keyframes crypto-ticker-enter {
+  from {
+    transform: translateX(100vw);
+  }
+  to {
+    transform: translateX(0);
   }
 }
 
@@ -4475,6 +4362,105 @@ body::before {
 
 .scheduler-add {
   flex: 0 0 auto;
+}
+
+/* ==========================================================================
+   Daily Mission 대시보드(임시 데이터 · 개발 보류)
+   ========================================================================== */
+.mission-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  color: var(--text-main);
+  font-weight: 700;
+}
+
+.mission-summary-note {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.16);
+  color: #b45309;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.mission-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+}
+
+.mission-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.mission-check {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.mission-item.is-done .mission-check {
+  border-color: rgba(16, 185, 129, 0.5);
+  background: rgba(16, 185, 129, 0.16);
+  color: #059669;
+}
+
+.mission-body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.mission-project {
+  color: var(--text-main);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.mission-item.is-done .mission-task,
+.mission-item.is-done .mission-project {
+  color: var(--text-dim);
+  text-decoration: line-through;
+}
+
+.mission-task {
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mission-reward {
+  flex: 0 0 auto;
+  color: var(--accent-blue);
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  font-weight: 700;
 }
 
 @media (max-width: 640px) {

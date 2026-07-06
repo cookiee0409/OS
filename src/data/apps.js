@@ -22,6 +22,17 @@ window.CookieLabApps = [
     system: true,
   },
   {
+    id: "daily-mission",
+    name: "Daily Mission",
+    category: "System / Airdrop",
+    status: "WIP",
+    icon: "🪂",
+    description:
+      "매일 수행해야 하는 에어드랍 미션을 모아보는 대시보드입니다. (개발 보류, 임시 데이터)",
+    url: "#",
+    system: true,
+  },
+  {
     id: "crypto-dashboard",
     name: "Crypto Dashboard",
     category: "Crypto / Research",

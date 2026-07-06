@@ -259,8 +259,10 @@
       prices: {},
       status: "loading",
       updatedAt: null,
-      // 마퀴 애니메이션이 재렌더 후에도 이어지도록 기준 시각을 고정한다.
-      animEpoch: Date.now(),
+      // true 가 되기 전까지는 우측에서 슬라이드로 등장하는 최초 진입 연출을 보여준다.
+      entered: false,
+      // 무한 루프 전환 시각. 재렌더 후에도 마퀴 위치가 이어지도록 기준으로 쓴다.
+      animEpoch: 0,
     },
     calendar: {
       viewYear: new Date().getFullYear(),
@@ -369,9 +371,6 @@
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#39;");
 
-  const makeTime = (minutesAgo) =>
-    formatTime(new Date(state.now.getTime() - minutesAgo * 60_000));
-
   function formatDuration(seconds) {
     if (!Number.isFinite(seconds) || seconds <= 0) {
       return "--:--";
@@ -388,8 +387,7 @@
   };
 
   const windowDefaults = {
-    welcome: { x: 220, y: 48, width: 560, height: 360 },
-    "system-log": { x: 780, y: 72, width: 360, height: 310 },
+    welcome: { x: 24, y: 20, width: 560, height: 300 },
     "system-folder": { x: 200, y: 58, width: 620, height: 650 },
     "music-player": { x: 260, y: 52, width: 500, height: 690 },
     "app-detail": { x: 340, y: 126, width: 500, height: 430 },
@@ -497,10 +495,6 @@
   function getWindowTitle(windowState) {
     if (windowState.kind === "welcome") {
       return "Welcome to CookieLab OS";
-    }
-
-    if (windowState.kind === "system-log") {
-      return "System Log";
     }
 
     if (windowState.kind === "scheduler") {
@@ -827,7 +821,6 @@
 
     initialWindowsOpened = true;
     openWindow("welcome", { focus: false, renderNow: false });
-    openWindow("system-log", { focus: false, renderNow: false });
     focusWindow("welcome", { renderNow: false });
   }
 
@@ -837,11 +830,6 @@
       if (element.tagName === "TIME") {
         element.setAttribute("datetime", state.now.toISOString());
       }
-    });
-
-    document.querySelectorAll("[data-relative-minutes]").forEach((element) => {
-      const minutesAgo = Number(element.dataset.relativeMinutes) || 0;
-      element.textContent = `[${makeTime(minutesAgo)}]`;
     });
   }
 
@@ -1736,13 +1724,21 @@
         </span>
       `;
     };
-    // 끊김 없는 루프를 위해 동일 목록을 두 번 반복하고, 재렌더 뒤에도 위상이
-    // 이어지도록 기준 시각(animEpoch)만큼 음수 딜레이를 준다.
+    // 끊김 없는 루프를 위해 동일 목록을 두 번 반복한다.
     const items = cryptoTickerCoins.map(buildCoin).join("");
-    const elapsed = (Date.now() - state.crypto.animEpoch) / 1000;
+
+    // 최초 진입 시에는 우측 화면 밖에서 슬라이드로 등장하고,
+    // 등장이 끝난 뒤부터 무한 루프로 전환한다(재렌더에도 위상 유지를 위해 음수 딜레이 사용).
+    const trackClass = state.crypto.entered
+      ? "crypto-ticker-track is-looping"
+      : "crypto-ticker-track is-entering";
+    const trackStyle = state.crypto.entered
+      ? ` style="animation-delay: -${((Date.now() - state.crypto.animEpoch) / 1000).toFixed(2)}s"`
+      : "";
+
     return `
       <div class="crypto-ticker" data-status="${state.crypto.status}" aria-label="주요 코인 실시간 시세">
-        <div class="crypto-ticker-track" style="animation-delay: -${elapsed.toFixed(2)}s">
+        <div class="${trackClass}"${trackStyle}>
           ${items}${items}
         </div>
       </div>
@@ -1929,9 +1925,6 @@
   }
 
   function WelcomeWindow(windowState) {
-    const cryptoApp = appById("crypto-dashboard");
-    const launchUrl = safeExternalUrl(cryptoApp?.url);
-
     return WindowPanel({
       id: windowState.id,
       title: "Welcome to CookieLab OS",
@@ -1944,17 +1937,6 @@
         <p>
           Crypto, Stocks, IPO, News, Trend, Visual Tools, 그리고 실험적인 인터랙티브 프로젝트들을 선택해 실행하세요.
         </p>
-        <div class="system-readout" aria-label="System readout">
-          <span>PROJECTS ${apps.length}</span>
-          <span>MODE SAMPLE</span>
-          <span>READY</span>
-        </div>
-      `,
-      actions: `
-        <a class="retro-button primary" href="${escapeHtml(launchUrl)}" target="_blank" rel="noreferrer">Launch Crypto Dashboard</a>
-        <button class="retro-button" type="button" data-action="select-app" data-app-id="ipo-dashboard">Open IPO Center</button>
-        <button class="retro-button" type="button" data-action="select-app" data-app-id="trend-collector">Start Trend Collector</button>
-        <button class="retro-button ghost" type="button" data-action="view-all-apps">View All Apps</button>
       `,
     });
   }
@@ -2336,6 +2318,58 @@
     `;
   }
 
+  // 데일리 미션 대시보드는 개발이 보류 상태라, 화면 구성 확인용 임시 데이터로 채워둔다.
+  const dailyMissionSeed = [
+    { project: "Hyperliquid", task: "일일 체크인 완료", reward: "+20P", done: true },
+    { project: "Lighter", task: "거래량 $500 이상 달성", reward: "+50P", done: false },
+    { project: "Monad Testnet", task: "테스트넷 트랜잭션 3건 전송", reward: "+15P", done: false },
+    { project: "Berachain", task: "일일 스테이킹 유지", reward: "+10P", done: true },
+    { project: "Fuel", task: "브릿지 1회 이상 사용", reward: "+25P", done: false },
+  ];
+
+  function DailyMissionWindow(app, windowState) {
+    const doneCount = dailyMissionSeed.filter((mission) => mission.done).length;
+    const items = dailyMissionSeed
+      .map(
+        (mission) => `
+          <li class="mission-item${mission.done ? " is-done" : ""}">
+            <span class="mission-check" aria-hidden="true">${mission.done ? "✓" : ""}</span>
+            <span class="mission-body">
+              <span class="mission-project">${escapeHtml(mission.project)}</span>
+              <span class="mission-task">${escapeHtml(mission.task)}</span>
+            </span>
+            <span class="mission-reward">${escapeHtml(mission.reward)}</span>
+          </li>
+        `,
+      )
+      .join("");
+
+    return WindowPanel({
+      id: windowState.id,
+      title: app.name,
+      className: "daily-mission-window",
+      closeAction: "close-detail",
+      focusable: true,
+      windowState,
+      children: `
+        <div class="mission-summary">
+          <span>오늘 완료 ${doneCount} / ${dailyMissionSeed.length}</span>
+          <span class="mission-summary-note">준비 중 · 임시 데이터</span>
+        </div>
+        <ul class="mission-list">
+          ${items}
+        </ul>
+        <p class="window-note">
+          매일 수행해야 하는 에어드랍 미션을 모아보는 대시보드입니다. 현재 개발이 보류된 상태이며,
+          위 항목들은 화면 구성을 보여주기 위한 임시 데이터입니다.
+        </p>
+      `,
+      actions: `
+        <button class="retro-button ghost" type="button" data-action="close-detail">Close</button>
+      `,
+    });
+  }
+
   function AppDetailWindow(windowState) {
     const app = appById(windowState.appId);
     if (!app) {
@@ -2348,6 +2382,10 @@
 
     if (app.id === "music-player") {
       return MusicPlayerWindow(app, windowState);
+    }
+
+    if (app.id === "daily-mission") {
+      return DailyMissionWindow(app, windowState);
     }
 
     const appUrl = safeExternalUrl(app.url);
@@ -2413,47 +2451,6 @@
     });
   }
 
-  function SystemLog(windowState) {
-    const entries = [
-      { tone: "mint", minutesAgo: 0, message: "CookieLab OS started" },
-      { tone: "blue", minutesAgo: 0, message: `${apps.length} project modules loaded` },
-      { tone: "blue", minutesAgo: 1, message: "Crypto Dashboard ready" },
-      { tone: "purple", minutesAgo: 2, message: "News Poster module standby" },
-      { tone: "yellow", minutesAgo: 3, message: "Trend Collector sync pending" },
-    ];
-
-    const logItems = entries
-      .map(
-        (entry) => `
-          <li class="log-entry" data-tone="${entry.tone}">
-            <span class="log-dot" aria-hidden="true"></span>
-            <time data-relative-minutes="${entry.minutesAgo}">[${makeTime(entry.minutesAgo)}]</time>
-            <span>${escapeHtml(entry.message)}</span>
-          </li>
-        `,
-      )
-      .join("");
-
-    return WindowPanel({
-      id: windowState.id,
-      title: "System Log",
-      className: "system-log-window",
-      windowState,
-      focusable: true,
-      children: `
-        <ol class="system-log-list">
-          ${logItems}
-        </ol>
-        <div class="monitor-grid" aria-label="Project monitor">
-          <span>CPU <strong>12%</strong></span>
-          <span>MEM <strong>42%</strong></span>
-          <span>NET <strong>ONLINE</strong></span>
-          <span>SYNC <strong>SAMPLE</strong></span>
-        </div>
-      `,
-    });
-  }
-
   function StartMenu() {
     if (!state.startOpen) {
       return "";
@@ -2514,7 +2511,7 @@
         const app = windowState.appId ? appById(windowState.appId) : null;
         const active = windowState.id === state.focusedWindowId ? " is-active" : "";
         const minimized = windowState.minimized ? " is-minimized" : "";
-        const icon = app?.icon || (windowState.kind === "system-log" ? "LOG" : "OS");
+        const icon = app?.icon || "OS";
         const title = getWindowTitle(windowState);
         const buttonTitle = windowState.minimized
           ? `${title} minimized - click to restore`
@@ -2574,9 +2571,6 @@
           ${escapeHtml(currentLabel)}
         </div>
         <div class="taskbar-system">
-          <span class="system-extra">CPU 12%</span>
-          <span class="system-extra">MEM 42%</span>
-          <span>ONLINE</span>
           <time data-current-time datetime="${state.now.toISOString()}">${formatTime()}</time>
         </div>
       </footer>
@@ -2719,10 +2713,6 @@
   function RenderWindow(windowState) {
     if (windowState.kind === "welcome") {
       return WelcomeWindow(windowState);
-    }
-
-    if (windowState.kind === "system-log") {
-      return SystemLog(windowState);
     }
 
     if (windowState.kind === "scheduler") {
@@ -3691,6 +3681,12 @@
       // 상단 전광판 시세: 즉시 1회 조회 후 주기적으로 갱신(몇 분 지연 허용).
       fetchCryptoPrices();
       setInterval(fetchCryptoPrices, 60_000);
+      // 우측에서 슬라이드로 들어오는 진입 연출이 끝나면 무한 루프 모드로 전환.
+      setTimeout(() => {
+        state.crypto.entered = true;
+        state.crypto.animEpoch = Date.now();
+        render();
+      }, 1200);
     }, 380);
   }, 1250);
 
