@@ -1,9 +1,73 @@
 (() => {
-  const apps = window.CookieLabApps || [];
+  const baseApps = window.CookieLabApps || [];
+  const vibeSystemApps = [
+    {
+      id: "terminal",
+      name: "Terminal",
+      category: "System / Command",
+      status: "LIVE",
+      icon: "./assets/icons/hammer_and_wrench_3d.png",
+      description: "Run CookieLab OS commands, open apps, and inspect workspace state.",
+      url: "#",
+      system: true,
+    },
+    {
+      id: "notes",
+      name: "Notes",
+      category: "System / Notes",
+      status: "LIVE",
+      icon: "./assets/icons/open_book_3d.png",
+      description: "Multi-tab sticky notes saved locally in this browser.",
+      url: "#",
+      system: true,
+    },
+    {
+      id: "snippets",
+      name: "Snippets",
+      category: "System / Clipboard",
+      status: "LIVE",
+      icon: "./assets/icons/card_index_dividers_3d.png",
+      description: "Search, save, and copy wallet addresses, links, and repeated text.",
+      url: "#",
+      system: true,
+    },
+    {
+      id: "mini-browser",
+      name: "Mini Browser",
+      category: "System / Preview",
+      status: "LIVE",
+      icon: "./assets/icons/globe_showing_europe-africa_3d.png",
+      description: "Preview project URLs in desktop, tablet, and phone frames.",
+      url: "#",
+      system: true,
+    },
+    {
+      id: "calculator",
+      name: "Calculator",
+      category: "System / Utility",
+      status: "LIVE",
+      icon: "./assets/icons/bar_chart_3d.png",
+      description: "A compact calculator with expression history.",
+      url: "#",
+      system: true,
+    },
+  ];
+  const apps = [
+    ...baseApps,
+    ...vibeSystemApps.filter(
+      (app) => !baseApps.some((existingApp) => existingApp.id === app.id),
+    ),
+  ];
   const environmentStorageKey = "cookielab-os-environment";
+  const wallpaperReleaseId = "light-paint-space-2026-07-07";
+  const windowLayoutStorageKey = "cookielab-os-window-layout";
+  const windowLayoutVersion = 1;
   const musicStorageKey = "cookielab-os-music";
   const petStorageKey = "cookielab-os-pet";
   const scheduleStorageKey = "cookielab-os-schedules";
+  const notesStorageKey = "cookielab-os-notes";
+  const snippetsStorageKey = "cookielab-os-snippets";
+  const browserStorageKey = "cookielab-os-browser";
 
   // 상단 헤더 전광판에 표시할 주요 코인 (CoinGecko id 기준).
   const cryptoTickerCoins = [
@@ -26,6 +90,11 @@
   ];
 
   const wallpaperOptions = [
+    {
+      id: "light-space",
+      name: "Light Paint Space",
+      description: "Black cosmic wallpaper with luminous paint-like splashes.",
+    },
     {
       id: "sky",
       name: "Glass Sky",
@@ -87,41 +156,116 @@
     },
   ];
 
+  const audioSourceLabels = {
+    gongu: "출처 : 공유마당",
+    pixabay: "출처 : Pixabay",
+  };
+
   const localAudioTracks = [
     {
       id: "black-box-south-korea",
       name: "South Korea",
       artist: "BLACK BOX",
-      license: "Local MP3",
+      description: audioSourceLabels.gongu,
       src: "./assets/audio/BLACK BOX - South Korea.mp3",
+    },
+    {
+      id: "light-world-hope-song",
+      name: "빛의 세상으로(희망가)",
+      artist: "소향 보컬 버전",
+      description: audioSourceLabels.gongu,
+      src: "./assets/audio/빛의 세상으로(희망가) 소향 보컬 버전.mp3",
+    },
+    {
+      id: "alex-morgan-fantasy-adventure-quest",
+      name: "Fantasy Adventure Quest",
+      artist: "Alex Morgan",
+      description: audioSourceLabels.pixabay,
+      src: "./assets/audio/alex-morgan-fantasy-adventure-quest-537478.mp3",
     },
     {
       id: "cookielab-loop",
       name: "CookieLab Local Loop",
       artist: "CookieLab OS",
-      license: "Original demo loop",
+      description: audioSourceLabels.pixabay,
       src: "./assets/audio/cookielab-loop.wav",
+    },
+    {
+      id: "eight-bit-arcade-come-on-mario",
+      name: "8-Bit Background Music for Arcade Game",
+      artist: "white_records",
+      description: audioSourceLabels.pixabay,
+      src: "./assets/audio/white_records-8-bit-background-music-for-arcade-game-come-on-mario-164702.mp3",
+    },
+    {
+      id: "background-music",
+      name: "Background Music",
+      artist: "ikoliks_aj",
+      description: audioSourceLabels.pixabay,
+      src: "./assets/audio/ikoliks_aj-background-music-320427.mp3",
+    },
+    {
+      id: "epic",
+      name: "Epic",
+      artist: "kornevmusic",
+      description: audioSourceLabels.pixabay,
+      src: "./assets/audio/kornevmusic-epic-478847.mp3",
+    },
+    {
+      id: "mfcc-no-copyright-music",
+      name: "No Copyright Music",
+      artist: "mfcc",
+      description: audioSourceLabels.pixabay,
+      src: "./assets/audio/mfcc-no-copyright-music-261601.mp3",
+    },
+    {
+      id: "music-promotion-no-copyright",
+      name: "Music Promotion No Copyright",
+      artist: "miromaxmusic",
+      description: audioSourceLabels.pixabay,
+      src: "./assets/audio/miromaxmusic-music-promotion-no-copyright-513944.mp3",
+    },
+    {
+      id: "happy",
+      name: "Happy",
+      artist: "nastelbom",
+      description: audioSourceLabels.pixabay,
+      src: "./assets/audio/nastelbom-happy-444082.mp3",
+    },
+    {
+      id: "upbeat-rock",
+      name: "Upbeat Rock",
+      artist: "nastelbom",
+      description: audioSourceLabels.pixabay,
+      src: "./assets/audio/nastelbom-upbeat-rock-507935.mp3",
+    },
+    {
+      id: "lo-fi-sentimental-jazzy-love",
+      name: "Lo-Fi Music Loop Sentimental Jazzy Love",
+      artist: "sonican",
+      description: audioSourceLabels.pixabay,
+      src: "./assets/audio/sonican-lo-fi-music-loop-sentimental-jazzy-love-473154.mp3",
+    },
+    {
+      id: "punk-rock-heatwave",
+      name: "Punk Rock Heatwave",
+      artist: "VibeMode",
+      description: audioSourceLabels.pixabay,
+      src: "./assets/audio/vibemode-punk-rock-heatwave-545931.mp3",
     },
     {
       id: "water-afro-pop",
       name: "Water Afro Pop Music",
       artist: "kontraa",
-      license: "Local MP3",
+      description: audioSourceLabels.pixabay,
       src: "./assets/audio/kontraa-water-afro-pop-music-445661.mp3",
     },
     {
       id: "no-copyright-music",
       name: "No Copyright Music",
       artist: "sigmamusicart",
-      license: "Local MP3",
+      description: audioSourceLabels.pixabay,
       src: "./assets/audio/sigmamusicart-no-copyright-music-537751.mp3",
-    },
-    {
-      id: "light-world-hope-song",
-      name: "빛의 세상으로(희망가)",
-      artist: "소향 보컬 버전",
-      license: "Local MP3",
-      src: "./assets/audio/빛의 세상으로(희망가) 소향 보컬 버전.mp3",
     },
   ];
 
@@ -131,11 +275,29 @@
     { id: "large", name: "Large", label: "넓게", height: 220 },
   ];
 
+  const memorySaverDelayOptions = [
+    { id: "60", name: "1 min", ms: 60_000 },
+    { id: "180", name: "3 min", ms: 180_000 },
+    { id: "300", name: "5 min", ms: 300_000 },
+  ];
+
+  const uiScaleOptions = [
+    { id: "85", name: "85%", value: 0.85 },
+    { id: "100", name: "100%", value: 1 },
+    { id: "110", name: "110%", value: 1.1 },
+    { id: "120", name: "120%", value: 1.2 },
+  ];
+
   const defaultEnvironment = {
-    wallpaper: "sky",
+    wallpaper: "light-space",
+    wallpaperEnabled: true,
+    wallpaperReleaseId,
     grid: true,
     glow: true,
     density: "normal",
+    memorySaver: true,
+    memorySaverDelay: 180_000,
+    scale: 1,
   };
 
   const defaultMusic = {
@@ -158,15 +320,40 @@
   function loadEnvironment() {
     try {
       const parsed = JSON.parse(localStorage.getItem(environmentStorageKey) || "{}");
+      const shouldApplyReleasedWallpaper = parsed.wallpaperReleaseId !== wallpaperReleaseId;
+      const memorySaverDelay = memorySaverDelayOptions.some(
+        (item) => item.ms === parsed.memorySaverDelay,
+      )
+        ? parsed.memorySaverDelay
+        : defaultEnvironment.memorySaverDelay;
+      const scale = uiScaleOptions.some((item) => item.value === parsed.scale)
+        ? parsed.scale
+        : defaultEnvironment.scale;
       return {
         ...defaultEnvironment,
         ...parsed,
-        wallpaper: wallpaperOptions.some((item) => item.id === parsed.wallpaper)
+        wallpaper: shouldApplyReleasedWallpaper
+          ? defaultEnvironment.wallpaper
+          : wallpaperOptions.some((item) => item.id === parsed.wallpaper)
           ? parsed.wallpaper
           : defaultEnvironment.wallpaper,
+        wallpaperEnabled: shouldApplyReleasedWallpaper
+          ? defaultEnvironment.wallpaperEnabled
+          : typeof parsed.wallpaperEnabled === "boolean"
+            ? parsed.wallpaperEnabled
+            : defaultEnvironment.wallpaperEnabled,
+        wallpaperReleaseId,
         density: densityOptions.some((item) => item.id === parsed.density)
           ? parsed.density
           : defaultEnvironment.density,
+        grid: typeof parsed.grid === "boolean" ? parsed.grid : defaultEnvironment.grid,
+        glow: typeof parsed.glow === "boolean" ? parsed.glow : defaultEnvironment.glow,
+        memorySaver:
+          typeof parsed.memorySaver === "boolean"
+            ? parsed.memorySaver
+            : defaultEnvironment.memorySaver,
+        memorySaverDelay,
+        scale,
       };
     } catch {
       return { ...defaultEnvironment };
@@ -241,6 +428,119 @@
     }
   }
 
+  function defaultNotesState() {
+    const firstId = "note-home";
+    return {
+      tabs: [
+        {
+          id: firstId,
+          title: "Scratchpad",
+          body: "",
+          accent: "mint",
+        },
+      ],
+      activeTabId: firstId,
+    };
+  }
+
+  function loadNotes() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(notesStorageKey) || "null");
+      if (!parsed || !Array.isArray(parsed.tabs)) {
+        return defaultNotesState();
+      }
+
+      const tabs = parsed.tabs
+        .filter((tab) => tab && typeof tab.body === "string")
+        .map((tab) => ({
+          id: String(tab.id || `note-${Math.random().toString(36).slice(2, 8)}`),
+          title: String(tab.title || "Untitled").slice(0, 42),
+          body: tab.body,
+          accent: ["mint", "blue", "yellow", "pink"].includes(tab.accent)
+            ? tab.accent
+            : "mint",
+        }));
+
+      if (!tabs.length) {
+        return defaultNotesState();
+      }
+
+      return {
+        tabs,
+        activeTabId: tabs.some((tab) => tab.id === parsed.activeTabId)
+          ? parsed.activeTabId
+          : tabs[0].id,
+      };
+    } catch {
+      return defaultNotesState();
+    }
+  }
+
+  function defaultSnippets() {
+    return [
+      {
+        id: "snip-wallet",
+        label: "Wallet Address",
+        value: "0x0000...0000",
+        tag: "wallet",
+      },
+      {
+        id: "snip-dashboard",
+        label: "CookieLab OS",
+        value: "https://cookie-ipo.vercel.app",
+        tag: "link",
+      },
+      {
+        id: "snip-contact",
+        label: "Contact",
+        value: "hello@cookielab.local",
+        tag: "contact",
+      },
+    ];
+  }
+
+  function loadSnippets() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(snippetsStorageKey) || "null");
+      if (!Array.isArray(parsed)) {
+        return defaultSnippets();
+      }
+
+      const snippets = parsed
+        .filter((item) => item && typeof item.value === "string")
+        .map((item) => ({
+          id: String(item.id || `snip-${Math.random().toString(36).slice(2, 8)}`),
+          label: String(item.label || "Untitled").slice(0, 60),
+          value: item.value,
+          tag: String(item.tag || "general").slice(0, 24),
+        }));
+
+      return snippets.length ? snippets : defaultSnippets();
+    } catch {
+      return defaultSnippets();
+    }
+  }
+
+  function loadBrowserState() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(browserStorageKey) || "{}");
+      const url = typeof parsed.url === "string" && /^https?:\/\//i.test(parsed.url)
+        ? parsed.url
+        : "https://cookie-ipo.vercel.app";
+      return {
+        url,
+        device: ["desktop", "tablet", "phone"].includes(parsed.device)
+          ? parsed.device
+          : "desktop",
+      };
+    } catch {
+      return {
+        url: "https://cookie-ipo.vercel.app",
+        device: "desktop",
+      };
+    }
+  }
+
   const state = {
     bootPhase: "booting",
     selectedAppId: "",
@@ -270,6 +570,32 @@
       selectedDate: "",
     },
     schedules: loadSchedules(),
+    terminal: {
+      lines: [
+        { tone: "muted", text: "CookieLab Terminal ready. Type help to begin." },
+      ],
+      history: [],
+    },
+    notes: loadNotes(),
+    snippets: {
+      items: loadSnippets(),
+      query: "",
+      draft: {
+        label: "",
+        value: "",
+        tag: "general",
+      },
+    },
+    browser: loadBrowserState(),
+    calculator: {
+      expression: "",
+      result: "0",
+      history: [],
+    },
+    commandPalette: {
+      open: false,
+      query: "",
+    },
   };
 
   const root = document.getElementById("app");
@@ -277,6 +603,7 @@
   let activeWindowGesture = null;
   let activeDockGesture = null;
   let suppressDockClick = false;
+  const windowSuspendTimers = new Map();
   const audioEngine = {
     context: null,
     masterGain: null,
@@ -390,9 +717,23 @@
     welcome: { x: 24, y: 20, width: 560, height: 300 },
     "system-folder": { x: 200, y: 58, width: 620, height: 650 },
     "music-player": { x: 260, y: 52, width: 500, height: 690 },
+    terminal: { x: 180, y: 92, width: 680, height: 460 },
+    notes: { x: 220, y: 96, width: 540, height: 520 },
+    snippets: { x: 250, y: 112, width: 620, height: 520 },
+    "mini-browser": { x: 180, y: 78, width: 840, height: 620 },
+    calculator: { x: 320, y: 126, width: 360, height: 520 },
     "app-detail": { x: 340, y: 126, width: 500, height: 430 },
     scheduler: { x: 360, y: 360, width: 440, height: 326 },
   };
+  const standaloneAppKinds = new Set([
+    "system-folder",
+    "music-player",
+    "terminal",
+    "notes",
+    "snippets",
+    "mini-browser",
+    "calculator",
+  ]);
 
   const weekdayNames = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -501,6 +842,10 @@
       return "Scheduler";
     }
 
+    if (standaloneAppKinds.has(windowState.kind)) {
+      return appById(windowState.kind)?.name || "Window";
+    }
+
     const app = appById(windowState.appId);
     return app?.name || "Window";
   }
@@ -593,6 +938,256 @@
     );
   }
 
+  function finiteWindowNumber(value, fallback) {
+    const number = Number(value);
+    return Number.isFinite(number) ? number : fallback;
+  }
+
+  function normalizedWindowOpacity(value) {
+    const number = finiteWindowNumber(value, 1);
+    if (number <= 0.7) {
+      return 0.6;
+    }
+    if (number < 0.95) {
+      return 0.8;
+    }
+    return 1;
+  }
+
+  function normalizedPrevBounds(value) {
+    if (!value || typeof value !== "object") {
+      return null;
+    }
+
+    return {
+      x: finiteWindowNumber(value.x, desktopFrame.margin),
+      y: finiteWindowNumber(value.y, desktopFrame.margin),
+      width: finiteWindowNumber(value.width, windowDefaults["app-detail"].width),
+      height: finiteWindowNumber(value.height, windowDefaults["app-detail"].height),
+    };
+  }
+
+  function restoreWindowStateFromLayout(item) {
+    if (!item || typeof item !== "object") {
+      return null;
+    }
+
+    const kind = String(item.kind || "");
+    if (!Object.prototype.hasOwnProperty.call(windowDefaults, kind)) {
+      return null;
+    }
+
+    let appId = typeof item.appId === "string" ? item.appId : "";
+    if (standaloneAppKinds.has(kind)) {
+      appId = kind;
+    }
+
+    if (kind === "app-detail" && !appById(appId)) {
+      return null;
+    }
+
+    if (standaloneAppKinds.has(kind) && !appById(appId)) {
+      return null;
+    }
+
+    const defaults = windowDefaults[kind] || windowDefaults["app-detail"];
+    const launched = kind === "app-detail" && Boolean(item.launched);
+    const windowState = {
+      id: getWindowId(kind, appId),
+      kind,
+      appId,
+      x: finiteWindowNumber(item.x, defaults.x),
+      y: finiteWindowNumber(item.y, defaults.y),
+      width: finiteWindowNumber(item.width, defaults.width),
+      height: finiteWindowNumber(item.height, defaults.height),
+      zIndex: Math.max(1, Math.round(finiteWindowNumber(item.zIndex, 10))),
+      minimized: Boolean(item.minimized),
+      maximized: Boolean(item.maximized),
+      prevBounds: normalizedPrevBounds(item.prevBounds),
+      opening: false,
+      liquidGlass: Boolean(item.liquidGlass),
+      opacity: normalizedWindowOpacity(item.opacity),
+      launched,
+      suspended: launched && state.environment.memorySaver,
+    };
+
+    normalizeWindowBounds(windowState);
+    return windowState;
+  }
+
+  function loadWindowLayout() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(windowLayoutStorageKey) || "null");
+      if (
+        !parsed ||
+        parsed.version !== windowLayoutVersion ||
+        !Array.isArray(parsed.windows)
+      ) {
+        return false;
+      }
+
+      const restoredWindows = parsed.windows
+        .map(restoreWindowStateFromLayout)
+        .filter(Boolean)
+        .sort((a, b) => a.zIndex - b.zIndex);
+
+      if (!restoredWindows.length) {
+        return false;
+      }
+
+      state.windows = {};
+      let maxZIndex = 10;
+      restoredWindows.forEach((windowState) => {
+        state.windows[windowState.id] = windowState;
+        maxZIndex = Math.max(maxZIndex, windowState.zIndex);
+      });
+      state.nextZIndex = Math.max(state.nextZIndex, maxZIndex);
+
+      const savedFocusId =
+        typeof parsed.focusedWindowId === "string" ? parsed.focusedWindowId : "";
+      const focusedWindow =
+        state.windows[savedFocusId] && !state.windows[savedFocusId].minimized
+          ? state.windows[savedFocusId]
+          : Object.values(state.windows)
+              .filter((windowState) => !windowState.minimized)
+              .sort((a, b) => b.zIndex - a.zIndex)[0];
+
+      state.focusedWindowId = focusedWindow?.id || "";
+      if (focusedWindow?.suspended) {
+        focusedWindow.suspended = false;
+      }
+      syncSelectedAppFromFocus();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function serializablePrevBounds(value) {
+    if (!value || typeof value !== "object") {
+      return null;
+    }
+
+    return {
+      x: finiteWindowNumber(value.x, desktopFrame.margin),
+      y: finiteWindowNumber(value.y, desktopFrame.margin),
+      width: finiteWindowNumber(value.width, windowDefaults["app-detail"].width),
+      height: finiteWindowNumber(value.height, windowDefaults["app-detail"].height),
+    };
+  }
+
+  function saveWindowLayout() {
+    if (!initialWindowsOpened) {
+      return;
+    }
+
+    const windows = Object.values(state.windows).map((windowState) => ({
+      id: windowState.id,
+      kind: windowState.kind,
+      appId: windowState.appId || "",
+      x: windowState.x,
+      y: windowState.y,
+      width: windowState.width,
+      height: windowState.height,
+      zIndex: windowState.zIndex,
+      minimized: Boolean(windowState.minimized),
+      maximized: Boolean(windowState.maximized),
+      prevBounds: serializablePrevBounds(windowState.prevBounds),
+      liquidGlass: Boolean(windowState.liquidGlass),
+      opacity: normalizedWindowOpacity(windowState.opacity),
+      launched: Boolean(windowState.launched),
+      suspended: Boolean(windowState.suspended),
+    }));
+
+    try {
+      localStorage.setItem(
+        windowLayoutStorageKey,
+        JSON.stringify({
+          version: windowLayoutVersion,
+          focusedWindowId: state.focusedWindowId,
+          windows,
+        }),
+      );
+    } catch {
+      /* localStorage 실패는 브라우저 정책/용량 이슈일 수 있어 조용히 무시한다. */
+    }
+  }
+
+  function clearWindowSuspendTimer(id) {
+    const timerId = windowSuspendTimers.get(id);
+    if (!timerId) {
+      return;
+    }
+
+    window.clearTimeout(timerId);
+    windowSuspendTimers.delete(id);
+  }
+
+  function shouldSuspendWindow(windowState) {
+    return Boolean(
+      state.environment.memorySaver &&
+        windowState?.kind === "app-detail" &&
+        windowState.launched,
+    );
+  }
+
+  function resumeWindow(windowState) {
+    if (!windowState) {
+      return false;
+    }
+
+    clearWindowSuspendTimer(windowState.id);
+    if (!windowState.suspended) {
+      return false;
+    }
+
+    windowState.suspended = false;
+    return true;
+  }
+
+  function scheduleWindowSuspension(windowState) {
+    if (!shouldSuspendWindow(windowState) || !windowState.minimized || windowState.suspended) {
+      return;
+    }
+
+    clearWindowSuspendTimer(windowState.id);
+    windowSuspendTimers.set(
+      windowState.id,
+      window.setTimeout(() => {
+        windowSuspendTimers.delete(windowState.id);
+        const currentWindow = state.windows[windowState.id];
+        if (
+          !currentWindow ||
+          !currentWindow.minimized ||
+          !shouldSuspendWindow(currentWindow) ||
+          currentWindow.suspended
+        ) {
+          return;
+        }
+
+        currentWindow.suspended = true;
+        saveWindowLayout();
+        if (state.bootPhase === "ready") {
+          render();
+        }
+      }, state.environment.memorySaverDelay),
+    );
+  }
+
+  function refreshWindowSuspensionTimers() {
+    windowSuspendTimers.forEach((timerId) => window.clearTimeout(timerId));
+    windowSuspendTimers.clear();
+
+    Object.values(state.windows).forEach((windowState) => {
+      if (!state.environment.memorySaver && windowState.suspended) {
+        windowState.suspended = false;
+      }
+
+      scheduleWindowSuspension(windowState);
+    });
+    saveWindowLayout();
+  }
+
   function syncSelectedAppFromFocus() {
     const focusedWindow = state.windows[state.focusedWindowId];
     state.selectedAppId = focusedWindow?.appId || "";
@@ -650,25 +1245,29 @@
     const { renderNow = true, restore = true } = options;
     const windowState = state.windows[id];
     if (!windowState) {
-      return;
+      return { resumed: false };
     }
 
+    let resumed = false;
     if (restore) {
       windowState.minimized = false;
+      resumed = resumeWindow(windowState);
     }
 
     windowState.zIndex = ++state.nextZIndex;
     state.focusedWindowId = id;
     state.notice = "";
     syncSelectedAppFromFocus();
+    saveWindowLayout();
 
     if (renderNow) {
       render();
       focusWindowElement(id);
-      return;
+      return { resumed };
     }
 
     syncWindowDomState();
+    return { resumed };
   }
 
   function openWindow(kind, options = {}) {
@@ -688,11 +1287,15 @@
         prevBounds: null,
         opening: true,
         liquidGlass: false,
+        opacity: 1,
+        launched: false,
+        suspended: false,
       };
       normalizeWindowBounds(windowState);
       state.windows[id] = windowState;
     } else {
       windowState.minimized = false;
+      resumeWindow(windowState);
     }
 
     state.startOpen = false;
@@ -707,6 +1310,7 @@
       focusWindowElement(id);
     }
 
+    saveWindowLayout();
     return windowState;
   }
 
@@ -718,6 +1322,7 @@
     }
 
     delete state.windows[id];
+    clearWindowSuspendTimer(id);
 
     if (state.focusedWindowId === id) {
       const nextWindow = topVisibleWindow();
@@ -738,6 +1343,7 @@
         focusStartButton();
       }
     }
+    saveWindowLayout();
   }
 
   function minimizeWindow(id) {
@@ -753,6 +1359,7 @@
     }
 
     windowState.minimized = true;
+    scheduleWindowSuspension(windowState);
     if (state.focusedWindowId === id) {
       const nextWindow = topVisibleWindow();
       state.focusedWindowId = nextWindow?.id || "";
@@ -768,6 +1375,7 @@
     } else {
       focusStartButton();
     }
+    saveWindowLayout();
   }
 
   function toggleWindowLiquidGlass(id) {
@@ -779,6 +1387,20 @@
     windowState.liquidGlass = !windowState.liquidGlass;
     render();
     focusWindowElement(id);
+    saveWindowLayout();
+  }
+
+  function cycleWindowOpacity(id) {
+    const windowState = state.windows[id];
+    if (!windowState) {
+      return;
+    }
+
+    const current = normalizedWindowOpacity(windowState.opacity);
+    windowState.opacity = current === 1 ? 0.8 : current === 0.8 ? 0.6 : 1;
+    render();
+    focusWindowElement(id);
+    saveWindowLayout();
   }
 
   function toggleMaximizeWindow(id) {
@@ -790,6 +1412,7 @@
     if (isCompactWindowMode()) {
       windowState.maximized = true;
       focusWindow(id);
+      saveWindowLayout();
       return;
     }
 
@@ -812,6 +1435,7 @@
     }
 
     focusWindow(id);
+    saveWindowLayout();
   }
 
   function ensureInitialWindows() {
@@ -820,8 +1444,14 @@
     }
 
     initialWindowsOpened = true;
+    if (loadWindowLayout()) {
+      refreshWindowSuspensionTimers();
+      return;
+    }
+
     openWindow("welcome", { focus: false, renderNow: false });
     focusWindow("welcome", { renderNow: false });
+    saveWindowLayout();
   }
 
   function updateClockNodes() {
@@ -842,6 +1472,37 @@
       localStorage.setItem(scheduleStorageKey, JSON.stringify(state.schedules));
     } catch (error) {
       /* 저장 실패는 조용히 무시 (용량 초과 등) */
+    }
+  }
+
+  function saveNotes() {
+    try {
+      localStorage.setItem(
+        notesStorageKey,
+        JSON.stringify({
+          version: 1,
+          tabs: state.notes.tabs,
+          activeTabId: state.notes.activeTabId,
+        }),
+      );
+    } catch {
+      /* localStorage 실패는 조용히 무시한다. */
+    }
+  }
+
+  function saveSnippets() {
+    try {
+      localStorage.setItem(snippetsStorageKey, JSON.stringify(state.snippets.items));
+    } catch {
+      /* localStorage 실패는 조용히 무시한다. */
+    }
+  }
+
+  function saveBrowserState() {
+    try {
+      localStorage.setItem(browserStorageKey, JSON.stringify(state.browser));
+    } catch {
+      /* localStorage 실패는 조용히 무시한다. */
     }
   }
 
@@ -909,6 +1570,7 @@
   }
 
   function applyEnvironment() {
+    document.documentElement.style.fontSize = `${Math.round(state.environment.scale * 100)}%`;
   }
 
   function selectedMusicTrack() {
@@ -1598,8 +2260,9 @@
     ]
       .filter(Boolean)
       .join(" ");
+    const opacityValue = normalizedWindowOpacity(windowState?.opacity);
     const windowStyle = windowState
-      ? `left: ${windowState.x}px; top: ${windowState.y}px; width: ${windowState.width}px; height: ${windowState.height}px; z-index: ${windowState.zIndex};`
+      ? `left: ${windowState.x}px; top: ${windowState.y}px; width: ${windowState.width}px; height: ${windowState.height}px; z-index: ${windowState.zIndex}; --window-opacity: ${opacityValue};`
       : "";
     const maximizeDisabled = Boolean(windowState && isCompactWindowMode());
     const maximizeLabel = windowState?.maximized ? "복원" : "최대화";
@@ -1652,6 +2315,16 @@
             title="Liquid Glass ${glassOn ? "끄기" : "켜기"}"
           >✎</button>`
       : "";
+    const opacityButton = windowState
+      ? `<button
+            type="button"
+            class="window-opacity-toggle"
+            data-action="cycle-window-opacity"
+            data-window-id="${escapeHtml(windowId)}"
+            aria-label="${escapeHtml(title)} opacity ${Math.round(opacityValue * 100)}%"
+            title="Opacity ${Math.round(opacityValue * 100)}%"
+          >Op</button>`
+      : "";
 
     return `
       <section
@@ -1668,6 +2341,7 @@
           </span>
           <h2 id="${titleId}" class="window-title">${escapeHtml(title)}</h2>
           ${glassToggle}
+          ${opacityButton}
           ${closeButton}
         </header>
         <div class="window-body">
@@ -1981,6 +2655,40 @@
       })
       .join("");
 
+    const memorySaverButtons = memorySaverDelayOptions
+      .map((option) => {
+        const active = environment.memorySaverDelay === option.ms ? " is-active" : "";
+        return `
+          <button
+            class="segmented-option${active}"
+            type="button"
+            data-action="set-memory-saver-delay"
+            data-delay="${option.ms}"
+            aria-pressed="${active ? "true" : "false"}"
+          >
+            ${escapeHtml(option.name)}
+          </button>
+        `;
+      })
+      .join("");
+
+    const scaleButtons = uiScaleOptions
+      .map((option) => {
+        const active = environment.scale === option.value ? " is-active" : "";
+        return `
+          <button
+            class="segmented-option${active}"
+            type="button"
+            data-action="set-ui-scale"
+            data-scale="${option.value}"
+            aria-pressed="${active ? "true" : "false"}"
+          >
+            ${escapeHtml(option.name)}
+          </button>
+        `;
+      })
+      .join("");
+
     return WindowPanel({
       id: windowState.id,
       title: app.name,
@@ -2000,6 +2708,13 @@
         </div>
         <section class="settings-section" aria-labelledby="wallpaper-settings-title">
           <h3 id="wallpaper-settings-title">Wallpaper</h3>
+          <div class="toggle-list wallpaper-toggle-list">
+            ${SettingToggle(
+              "wallpaperEnabled",
+              "Desktop Wallpaper",
+              "Use the selected wallpaper image behind CookieLab OS.",
+            )}
+          </div>
           <div class="wallpaper-grid">
             ${wallpaperButtons}
           </div>
@@ -2018,6 +2733,25 @@
             ${densityButtons}
           </div>
         </section>
+        <section class="settings-section" aria-labelledby="scale-settings-title">
+          <h3 id="scale-settings-title">UI Scale</h3>
+          <div class="segmented-control segmented-control-four" role="group" aria-label="UI scale">
+            ${scaleButtons}
+          </div>
+        </section>
+        <section class="settings-section" aria-labelledby="memory-settings-title">
+          <h3 id="memory-settings-title">Memory Saver</h3>
+          <div class="toggle-list">
+            ${SettingToggle(
+              "memorySaver",
+              "Suspend Minimized Apps",
+              "실행 중인 프로젝트 창을 최소화하면 일정 시간 뒤 iframe을 내려 메모리 사용을 줄입니다.",
+            )}
+          </div>
+          <div class="segmented-control memory-saver-delay" role="group" aria-label="Memory saver delay">
+            ${memorySaverButtons}
+          </div>
+        </section>
         <section class="settings-section music-methods" aria-labelledby="music-settings-title">
           <h3 id="music-settings-title">Music Module</h3>
           <p>
@@ -2027,6 +2761,11 @@
         </section>
       `,
       actions: `
+        <button class="retro-button" type="button" data-action="export-theme">Export Theme</button>
+        <label class="retro-button ghost theme-import-button">
+          Import Theme
+          <input class="visually-hidden" type="file" accept=".json,application/json" data-action="import-theme-file" />
+        </label>
         <button class="retro-button" type="button" data-action="reset-environment">Reset Environment</button>
         <button class="retro-button ghost" type="button" data-action="close-detail">Close Folder</button>
       `,
@@ -2095,7 +2834,7 @@
             <span class="local-audio-track-indicator" aria-hidden="true">${isPlaying ? "▶" : ""}</span>
             <span>
               <strong>${escapeHtml(item.name)}</strong>
-              <small>${escapeHtml(item.artist)} · ${escapeHtml(item.license)}</small>
+              <small>${escapeHtml(item.artist)} · ${escapeHtml(item.description)}</small>
             </span>
             <span class="local-audio-track-duration" data-local-track-duration="${escapeHtml(item.id)}">
               ${formatDuration(duration)}
@@ -2249,7 +2988,7 @@
             <p class="detail-kicker">Local Audio Library</p>
             <p class="music-title">${escapeHtml(audioTrack.name)}</p>
             <p class="folder-copy">
-              ${escapeHtml(audioTrack.artist)} · ${escapeHtml(audioTrack.license)}
+              ${escapeHtml(audioTrack.artist)} · ${escapeHtml(audioTrack.description)}
             </p>
           </div>
         </div>
@@ -2259,7 +2998,8 @@
             <div>
               <h3 id="local-audio-now-title">Now Loaded</h3>
               <strong>${escapeHtml(audioTrack.name)}</strong>
-              <span>${escapeHtml(audioTrack.artist)} · <span data-local-audio-time>${formatDuration(localCurrentTime)} / ${formatDuration(localDuration)}</span></span>
+              <span>${escapeHtml(audioTrack.artist)} · ${escapeHtml(audioTrack.description)}</span>
+              <span data-local-audio-time>${formatDuration(localCurrentTime)} / ${formatDuration(localDuration)}</span>
             </div>
           </div>
           ${localTransport}
@@ -2391,6 +3131,7 @@
     const appUrl = safeExternalUrl(app.url);
     const openable = appUrl !== "#";
     const launched = Boolean(windowState.launched && openable);
+    const suspended = Boolean(launched && windowState.suspended);
     const openAction = openable
       ? launched
         ? `<button class="retro-button" type="button" data-action="show-app-info" data-window-id="${escapeHtml(windowState.id)}">Back to Info</button>
@@ -2398,18 +3139,32 @@
         : `<button class="retro-button primary" type="button" data-action="launch-app" data-window-id="${escapeHtml(windowState.id)}">Open App</button>`
       : `<button class="retro-button is-disabled" type="button" disabled aria-disabled="true">Preparing</button>`;
     const detailContent = launched
-      ? `
-        <div class="project-runner">
-          <iframe
-            class="project-runner-frame"
-            src="${escapeHtml(appUrl)}"
-            title="${escapeHtml(app.name)} 실행 화면"
-            loading="lazy"
-            referrerpolicy="no-referrer"
-            allow="clipboard-read; clipboard-write; fullscreen"
-          ></iframe>
-        </div>
-      `
+      ? suspended
+        ? `
+          <div class="project-runner project-runner-suspended">
+            <div class="project-suspended-panel">
+              <span class="project-suspended-icon" aria-hidden="true">${IconAsset(app.icon, "project-suspended-img", 34)}</span>
+              <div>
+                <p class="detail-kicker">Memory Saver</p>
+                <strong>${escapeHtml(app.name)} is suspended</strong>
+                <p>최소화된 앱 iframe을 내려두었습니다. 창을 다시 포커스하면 앱을 새로 로드합니다.</p>
+              </div>
+              <button class="retro-button primary" type="button" data-action="resume-app" data-window-id="${escapeHtml(windowState.id)}">Reload App</button>
+            </div>
+          </div>
+        `
+        : `
+          <div class="project-runner">
+            <iframe
+              class="project-runner-frame"
+              src="${escapeHtml(appUrl)}"
+              title="${escapeHtml(app.name)} 실행 화면"
+              loading="lazy"
+              referrerpolicy="no-referrer"
+              allow="clipboard-read; clipboard-write; fullscreen"
+            ></iframe>
+          </div>
+        `
       : `
         <div class="detail-heading">
           <span class="detail-icon" aria-hidden="true">${IconAsset(app.icon, "detail-icon-img", 38)}</span>
@@ -2439,7 +3194,7 @@
     return WindowPanel({
       id: windowState.id,
       title: app.name,
-      className: `app-detail-window${launched ? " is-running" : ""}`,
+      className: `app-detail-window${launched ? " is-running" : ""}${suspended ? " is-suspended" : ""}`,
       closeAction: "close-detail",
       focusable: true,
       windowState,
@@ -2614,7 +3369,7 @@
             data-app-id="music-player"
             title="Music Player 열기"
           >${escapeHtml(audioTrack.name)}</button>
-          <span class="local-audio-license">${escapeHtml(audioTrack.license)}</span>
+          <span class="local-audio-license">${escapeHtml(audioTrack.description)}</span>
         </div>
         <div class="local-audio-dock-transport" role="group" aria-label="로컬 오디오 재생 제어">
           <button
@@ -2737,7 +3492,7 @@
     const environment = state.environment;
     const desktopClasses = [
       "desktop-shell",
-      `wallpaper-${environment.wallpaper}`,
+      environment.wallpaperEnabled ? `wallpaper-${environment.wallpaper}` : "wallpaper-off",
       `density-${environment.density}`,
       environment.grid ? "" : "grid-off",
       environment.glow ? "" : "glow-off",
@@ -2778,7 +3533,81 @@
     `;
   }
 
+  function cssEscape(value) {
+    if (window.CSS?.escape) {
+      return CSS.escape(String(value));
+    }
+
+    return String(value).replace(/["\\]/g, "\\$&");
+  }
+
+  function captureVolatileState() {
+    const activeElement = document.activeElement;
+    if (
+      !activeElement ||
+      !root.contains(activeElement) ||
+      !activeElement.matches?.("input, textarea, select")
+    ) {
+      return null;
+    }
+
+    const panel = activeElement.closest(".window-panel[data-window-id]");
+    const key =
+      activeElement.dataset.volatileKey ||
+      activeElement.dataset.action ||
+      activeElement.name ||
+      activeElement.id;
+    if (!key) {
+      return null;
+    }
+
+    const attr = activeElement.dataset.volatileKey
+      ? "data-volatile-key"
+      : activeElement.dataset.action
+        ? "data-action"
+        : activeElement.name
+          ? "name"
+          : "id";
+
+    return {
+      windowId: panel?.dataset.windowId || "",
+      attr,
+      key,
+      value: activeElement.value,
+      selectionStart: activeElement.selectionStart,
+      selectionEnd: activeElement.selectionEnd,
+    };
+  }
+
+  function restoreVolatileState(snapshot) {
+    if (!snapshot) {
+      return;
+    }
+
+    const scope = snapshot.windowId
+      ? document.querySelector(
+          `.window-panel[data-window-id="${cssEscape(snapshot.windowId)}"]`,
+        )
+      : root;
+    const target = scope?.querySelector(
+      `[${snapshot.attr}="${cssEscape(snapshot.key)}"]`,
+    );
+    if (!target || !target.matches?.("input, textarea, select")) {
+      return;
+    }
+
+    target.value = snapshot.value;
+    target.focus({ preventScroll: true });
+    if (
+      typeof snapshot.selectionStart === "number" &&
+      typeof target.setSelectionRange === "function"
+    ) {
+      target.setSelectionRange(snapshot.selectionStart, snapshot.selectionEnd);
+    }
+  }
+
   function render() {
+    const volatileState = captureVolatileState();
     applyEnvironment();
     root.innerHTML = `
       ${state.bootPhase !== "ready" ? BootScreen() : ""}
@@ -2787,6 +3616,7 @@
     Object.values(state.windows).forEach((windowState) => {
       windowState.opening = false;
     });
+    restoreVolatileState(volatileState);
   }
 
   function selectApp(id) {
@@ -2901,7 +3731,9 @@
     }
 
     windowState.launched = true;
+    windowState.suspended = false;
     windowState.minimized = false;
+    clearWindowSuspendTimer(id);
     if (!windowState.maximized && !isCompactWindowMode()) {
       windowState.width = Math.max(windowState.width, 920);
       windowState.height = Math.max(windowState.height, 640);
@@ -2909,6 +3741,7 @@
     }
 
     focusWindow(id, { renderNow: false });
+    saveWindowLayout();
     render();
     focusWindowElement(id);
   }
@@ -2920,7 +3753,23 @@
     }
 
     windowState.launched = false;
+    windowState.suspended = false;
+    clearWindowSuspendTimer(id);
     focusWindow(id, { renderNow: false });
+    saveWindowLayout();
+    render();
+    focusWindowElement(id);
+  }
+
+  function resumeAppWindow(id) {
+    const windowState = state.windows[id];
+    if (!windowState) {
+      return;
+    }
+
+    resumeWindow(windowState);
+    focusWindow(id, { renderNow: false });
+    saveWindowLayout();
     render();
     focusWindowElement(id);
   }
@@ -2942,12 +3791,8 @@
   }
 
   function getAppWindowKind(id) {
-    if (id === "system-folder") {
-      return "system-folder";
-    }
-
-    if (id === "music-player") {
-      return "music-player";
+    if (standaloneAppKinds.has(id)) {
+      return id;
     }
 
     return "app-detail";
@@ -2985,14 +3830,135 @@
     focusSystemFolder();
   }
 
+  function setMemorySaverDelay(value) {
+    const delay = Number(value);
+    if (!memorySaverDelayOptions.some((option) => option.ms === delay)) {
+      return;
+    }
+
+    state.environment.memorySaverDelay = delay;
+    state.notice = "";
+    saveEnvironment();
+    refreshWindowSuspensionTimers();
+    render();
+    focusSystemFolder();
+  }
+
+  function setUiScale(value) {
+    const scale = Number(value);
+    if (!uiScaleOptions.some((option) => option.value === scale)) {
+      return;
+    }
+
+    state.environment.scale = scale;
+    state.notice = "";
+    saveEnvironment();
+    render();
+    focusSystemFolder();
+  }
+
+  function environmentExportPayload() {
+    return {
+      version: 1,
+      environment: {
+        wallpaper: state.environment.wallpaper,
+        grid: Boolean(state.environment.grid),
+        glow: Boolean(state.environment.glow),
+        density: state.environment.density,
+        memorySaver: Boolean(state.environment.memorySaver),
+        memorySaverDelay: state.environment.memorySaverDelay,
+        scale: state.environment.scale,
+      },
+    };
+  }
+
+  function normalizeImportedEnvironment(value) {
+    const imported = value?.environment && typeof value.environment === "object"
+      ? value.environment
+      : value;
+    if (!imported || typeof imported !== "object") {
+      return null;
+    }
+
+    return {
+      ...state.environment,
+      wallpaper: wallpaperOptions.some((option) => option.id === imported.wallpaper)
+        ? imported.wallpaper
+        : state.environment.wallpaper,
+      density: densityOptions.some((option) => option.id === imported.density)
+        ? imported.density
+        : state.environment.density,
+      grid: typeof imported.grid === "boolean" ? imported.grid : state.environment.grid,
+      glow: typeof imported.glow === "boolean" ? imported.glow : state.environment.glow,
+      memorySaver:
+        typeof imported.memorySaver === "boolean"
+          ? imported.memorySaver
+          : state.environment.memorySaver,
+      memorySaverDelay: memorySaverDelayOptions.some(
+        (option) => option.ms === imported.memorySaverDelay,
+      )
+        ? imported.memorySaverDelay
+        : state.environment.memorySaverDelay,
+      scale: uiScaleOptions.some((option) => option.value === imported.scale)
+        ? imported.scale
+        : state.environment.scale,
+    };
+  }
+
+  function exportTheme() {
+    const blob = new Blob([JSON.stringify(environmentExportPayload(), null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "cookielab-os-theme.json";
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function importThemeFile(file) {
+    if (!file) {
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+      try {
+        const nextEnvironment = normalizeImportedEnvironment(JSON.parse(String(reader.result)));
+        if (!nextEnvironment) {
+          throw new Error("Invalid theme file");
+        }
+
+        state.environment = nextEnvironment;
+        state.notice = "Theme imported.";
+        saveEnvironment();
+        refreshWindowSuspensionTimers();
+        render();
+        focusSystemFolder();
+      } catch {
+        state.notice = "Theme import failed.";
+        render();
+        focusSystemFolder();
+      }
+    });
+    reader.readAsText(file);
+  }
+
   function toggleEnvironmentSetting(key) {
-    if (!Object.prototype.hasOwnProperty.call(defaultEnvironment, key)) {
+    if (
+      !Object.prototype.hasOwnProperty.call(defaultEnvironment, key) ||
+      typeof defaultEnvironment[key] !== "boolean"
+    ) {
       return;
     }
 
     state.environment[key] = !state.environment[key];
     state.notice = "";
     saveEnvironment();
+    if (key === "memorySaver") {
+      refreshWindowSuspensionTimers();
+    }
     render();
     focusSystemFolder();
   }
@@ -3001,6 +3967,7 @@
     state.environment = { ...defaultEnvironment };
     state.notice = "Desktop environment restored to defaults.";
     saveEnvironment();
+    refreshWindowSuspensionTimers();
     render();
     focusSystemFolder();
   }
@@ -3077,6 +4044,7 @@
         windowState.height = gesture.height;
       }
       normalizeWindowBounds(windowState);
+      saveWindowLayout();
     }
 
     if (element && windowState && !windowState.maximized) {
@@ -3235,7 +4203,12 @@
       return;
     }
 
-    focusWindow(id, { renderNow: false, restore: !windowState.minimized });
+    const focusResult = focusWindow(id, { renderNow: false, restore: !windowState.minimized });
+    if (focusResult.resumed) {
+      render();
+      focusWindowElement(id);
+      return;
+    }
 
     const resizeHandle = event.target.closest("[data-window-resize-handle]");
     const isResize = Boolean(resizeHandle);
@@ -3330,6 +4303,11 @@
       return;
     }
 
+    if (action === "cycle-window-opacity") {
+      cycleWindowOpacity(trigger.dataset.windowId);
+      return;
+    }
+
     if (action === "toggle-start") {
       state.startOpen = !state.startOpen;
       state.notice = "";
@@ -3377,6 +4355,11 @@
       return;
     }
 
+    if (action === "resume-app") {
+      resumeAppWindow(trigger.dataset.windowId);
+      return;
+    }
+
     if (action === "show-app-info") {
       showAppInfo(trigger.dataset.windowId);
       return;
@@ -3399,6 +4382,21 @@
 
     if (action === "set-density") {
       setDensity(trigger.dataset.density);
+      return;
+    }
+
+    if (action === "set-memory-saver-delay") {
+      setMemorySaverDelay(trigger.dataset.delay);
+      return;
+    }
+
+    if (action === "set-ui-scale") {
+      setUiScale(trigger.dataset.scale);
+      return;
+    }
+
+    if (action === "export-theme") {
+      exportTheme();
       return;
     }
 
@@ -3502,6 +4500,18 @@
     }
   });
 
+  root.addEventListener("change", (event) => {
+    const trigger = event.target.closest("[data-action]");
+    if (!trigger) {
+      return;
+    }
+
+    if (trigger.dataset.action === "import-theme-file") {
+      importThemeFile(trigger.files?.[0]);
+      trigger.value = "";
+    }
+  });
+
   root.addEventListener("keydown", (event) => {
     if (!event.key.startsWith("Arrow")) {
       return;
@@ -3587,6 +4597,7 @@
         windowState.maximized = true;
       }
     });
+    saveWindowLayout();
     handleDesktopPetResize();
 
     if (state.bootPhase === "ready") {
