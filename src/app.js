@@ -3110,6 +3110,298 @@
     });
   }
 
+  function TerminalWindow(app, windowState) {
+    const lines = state.terminal.lines
+      .map(
+        (line) => `
+          <div class="terminal-line terminal-line-${escapeHtml(line.tone || "normal")}">${escapeHtml(line.text)}</div>
+        `,
+      )
+      .join("");
+
+    return WindowPanel({
+      id: windowState.id,
+      title: app.name,
+      className: "terminal-window",
+      closeAction: "close-detail",
+      focusable: true,
+      windowState,
+      children: `
+        <div class="terminal-screen" aria-live="polite">
+          ${lines || '<div class="terminal-line terminal-line-muted">Terminal cleared.</div>'}
+        </div>
+        <form class="terminal-form" data-terminal-form autocomplete="off">
+          <span class="terminal-prompt">cookielab$</span>
+          <input
+            class="terminal-input"
+            data-volatile-key="terminal-input"
+            data-terminal-input
+            spellcheck="false"
+            autocomplete="off"
+            aria-label="Terminal command"
+          />
+        </form>
+      `,
+      actions: `
+        <button class="retro-button ghost" type="button" data-action="terminal-clear">Clear</button>
+        <button class="retro-button ghost" type="button" data-action="close-detail">Close</button>
+      `,
+    });
+  }
+
+  function NotesWindow(app, windowState) {
+    const activeTab = activeNoteTab();
+    const tabs = state.notes.tabs
+      .map(
+        (tab) => `
+          <div class="note-tab${tab.id === activeTab.id ? " is-active" : ""}">
+            <button type="button" data-action="select-note-tab" data-note-id="${escapeHtml(tab.id)}">
+              ${escapeHtml(tab.title || "Untitled")}
+            </button>
+            <button type="button" class="note-tab-close" data-action="delete-note-tab" data-note-id="${escapeHtml(tab.id)}" aria-label="Delete note">×</button>
+          </div>
+        `,
+      )
+      .join("");
+    const accentButtons = ["mint", "blue", "yellow", "pink"]
+      .map(
+        (accent) => `
+          <button
+            type="button"
+            class="note-accent note-accent-${accent}${activeTab.accent === accent ? " is-active" : ""}"
+            data-action="set-note-accent"
+            data-accent="${accent}"
+            aria-label="${accent}"
+          ></button>
+        `,
+      )
+      .join("");
+
+    return WindowPanel({
+      id: windowState.id,
+      title: app.name,
+      className: `notes-window notes-accent-${activeTab.accent}`,
+      closeAction: "close-detail",
+      focusable: true,
+      windowState,
+      children: `
+        <div class="notes-tabs">
+          ${tabs}
+          <button type="button" class="note-add" data-action="add-note-tab" aria-label="Add note">+</button>
+        </div>
+        <div class="notes-editor">
+          <input
+            class="note-title-input"
+            data-action="update-note-title"
+            data-volatile-key="note-title-${escapeHtml(activeTab.id)}"
+            value="${escapeHtml(activeTab.title)}"
+            maxlength="42"
+            aria-label="Note title"
+          />
+          <div class="note-accent-row" aria-label="Note accent">${accentButtons}</div>
+          <textarea
+            class="note-body-input"
+            data-action="update-note-body"
+            data-volatile-key="note-body-${escapeHtml(activeTab.id)}"
+            spellcheck="true"
+            aria-label="Note body"
+          >${escapeHtml(activeTab.body)}</textarea>
+        </div>
+      `,
+      actions: `
+        <button class="retro-button ghost" type="button" data-action="close-detail">Close</button>
+      `,
+    });
+  }
+
+  function SnippetsWindow(app, windowState) {
+    const snippets = filteredSnippets();
+    const items = snippets.length
+      ? snippets
+          .map(
+            (item) => `
+              <li class="snippet-item">
+                <div class="snippet-main">
+                  <span class="snippet-tag">${escapeHtml(item.tag)}</span>
+                  <strong>${escapeHtml(item.label)}</strong>
+                  <code>${escapeHtml(item.value)}</code>
+                </div>
+                <div class="snippet-actions">
+                  <button class="retro-button" type="button" data-action="copy-snippet" data-snippet-id="${escapeHtml(item.id)}">Copy</button>
+                  <button class="retro-button ghost" type="button" data-action="delete-snippet" data-snippet-id="${escapeHtml(item.id)}">Delete</button>
+                </div>
+              </li>
+            `,
+          )
+          .join("")
+      : '<li class="snippet-empty">No snippets match this search.</li>';
+
+    return WindowPanel({
+      id: windowState.id,
+      title: app.name,
+      className: "snippets-window",
+      closeAction: "close-detail",
+      focusable: true,
+      windowState,
+      children: `
+        <input
+          class="snippet-search"
+          data-action="set-snippet-query"
+          data-volatile-key="snippet-search"
+          value="${escapeHtml(state.snippets.query)}"
+          placeholder="Search snippets"
+          aria-label="Search snippets"
+        />
+        <ul class="snippet-list">${items}</ul>
+        <form class="snippet-form" data-snippet-form autocomplete="off">
+          <input
+            data-action="update-snippet-draft"
+            data-field="label"
+            data-volatile-key="snippet-label"
+            value="${escapeHtml(state.snippets.draft.label)}"
+            placeholder="Label"
+            aria-label="Snippet label"
+            maxlength="60"
+          />
+          <input
+            data-action="update-snippet-draft"
+            data-field="tag"
+            data-volatile-key="snippet-tag"
+            value="${escapeHtml(state.snippets.draft.tag)}"
+            placeholder="Tag"
+            aria-label="Snippet tag"
+            maxlength="24"
+          />
+          <textarea
+            data-action="update-snippet-draft"
+            data-field="value"
+            data-volatile-key="snippet-value"
+            placeholder="Value"
+            aria-label="Snippet value"
+          >${escapeHtml(state.snippets.draft.value)}</textarea>
+          <button class="retro-button primary" type="submit">Save Snippet</button>
+        </form>
+      `,
+      actions: `
+        <button class="retro-button ghost" type="button" data-action="close-detail">Close</button>
+      `,
+    });
+  }
+
+  function MiniBrowserWindow(app, windowState) {
+    const deviceButtons = [
+      { id: "desktop", label: "Desktop" },
+      { id: "tablet", label: "Tablet" },
+      { id: "phone", label: "Phone" },
+    ]
+      .map(
+        (device) => `
+          <button
+            class="segmented-option${state.browser.device === device.id ? " is-active" : ""}"
+            type="button"
+            data-action="set-browser-device"
+            data-device="${device.id}"
+            aria-pressed="${state.browser.device === device.id ? "true" : "false"}"
+          >${device.label}</button>
+        `,
+      )
+      .join("");
+    const presets = apps
+      .filter((item) => !item.system && safeExternalUrl(item.url) !== "#")
+      .slice(0, 6)
+      .map(
+        (item) => `
+          <button type="button" class="browser-preset" data-action="set-browser-url" data-url="${escapeHtml(item.url)}">
+            ${escapeHtml(item.name)}
+          </button>
+        `,
+      )
+      .join("");
+
+    return WindowPanel({
+      id: windowState.id,
+      title: app.name,
+      className: "mini-browser-window",
+      closeAction: "close-detail",
+      focusable: true,
+      windowState,
+      children: `
+        <form class="browser-toolbar" data-browser-form autocomplete="off">
+          <input
+            class="browser-url-input"
+            data-volatile-key="browser-url"
+            value="${escapeHtml(state.browser.url)}"
+            aria-label="Preview URL"
+          />
+          <button class="retro-button primary" type="submit">Go</button>
+          <a class="retro-button ghost" href="${escapeHtml(state.browser.url)}" target="_blank" rel="noreferrer">Open</a>
+        </form>
+        <div class="browser-device-control segmented-control" role="group" aria-label="Preview device">
+          ${deviceButtons}
+        </div>
+        <div class="browser-presets">${presets}</div>
+        <div class="browser-preview browser-preview-${escapeHtml(state.browser.device)}">
+          <iframe
+            class="browser-preview-frame"
+            src="${escapeHtml(state.browser.url)}"
+            title="Mini browser preview"
+            loading="lazy"
+            referrerpolicy="no-referrer"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+          ></iframe>
+        </div>
+      `,
+      actions: `
+        <button class="retro-button ghost" type="button" data-action="close-detail">Close</button>
+      `,
+    });
+  }
+
+  function CalculatorWindow(app, windowState) {
+    const buttons = [
+      ["clear", "C"], ["backspace", "⌫"], ["%", "%"], ["/", "÷"],
+      ["7", "7"], ["8", "8"], ["9", "9"], ["*", "×"],
+      ["4", "4"], ["5", "5"], ["6", "6"], ["-", "-"],
+      ["1", "1"], ["2", "2"], ["3", "3"], ["+", "+"],
+      ["(", "("], ["0", "0"], [".", "."], [")", ")"],
+      ["equals", "="],
+    ]
+      .map(
+        ([value, label]) => `
+          <button
+            class="calculator-key${value === "equals" ? " calculator-equals" : ""}"
+            type="button"
+            data-action="calculator-input"
+            data-calc-value="${escapeHtml(value)}"
+          >${escapeHtml(label)}</button>
+        `,
+      )
+      .join("");
+    const history = state.calculator.history
+      .map((item) => `<li>${escapeHtml(item)}</li>`)
+      .join("");
+
+    return WindowPanel({
+      id: windowState.id,
+      title: app.name,
+      className: "calculator-window",
+      closeAction: "close-detail",
+      focusable: true,
+      windowState,
+      children: `
+        <div class="calculator-display">
+          <span>${escapeHtml(state.calculator.expression || "0")}</span>
+          <strong>${escapeHtml(state.calculator.result)}</strong>
+        </div>
+        <div class="calculator-grid">${buttons}</div>
+        <ol class="calculator-history">${history}</ol>
+      `,
+      actions: `
+        <button class="retro-button ghost" type="button" data-action="close-detail">Close</button>
+      `,
+    });
+  }
+
   function AppDetailWindow(windowState) {
     const app = appById(windowState.appId);
     if (!app) {
@@ -3796,6 +4088,491 @@
     }
 
     return "app-detail";
+  }
+
+  function focusWindowInput(selector) {
+    requestAnimationFrame(() => {
+      document.querySelector(selector)?.focus({ preventScroll: true });
+    });
+  }
+
+  function terminalWrite(entries, tone = "normal") {
+    const nextEntries = Array.isArray(entries) ? entries : [entries];
+    nextEntries.forEach((entry) => {
+      if (typeof entry === "string") {
+        state.terminal.lines.push({ tone, text: entry });
+      } else if (entry?.text) {
+        state.terminal.lines.push({
+          tone: entry.tone || tone,
+          text: entry.text,
+        });
+      }
+    });
+    state.terminal.lines = state.terminal.lines.slice(-140);
+  }
+
+  function terminalCommandRegistry() {
+    return [
+      {
+        name: "help",
+        description: "List commands",
+        run: () =>
+          terminalCommandRegistry().map(
+            (command) => `${command.name.padEnd(12, " ")} ${command.description}`,
+          ),
+      },
+      {
+        name: "apps",
+        description: "List installed apps",
+        run: () =>
+          apps.map(
+            (app) =>
+              `${app.id.padEnd(16, " ")} ${app.status.padEnd(10, " ")} ${app.name}`,
+          ),
+      },
+      {
+        name: "open",
+        description: "Open app by id",
+        run: (args) => {
+          const app = appById(args[0]);
+          if (!app) {
+            return `Unknown app: ${args[0] || "(missing)"}`;
+          }
+          openWindow(getAppWindowKind(app.id), { appId: app.id, renderNow: false });
+          return `Opened ${app.name}`;
+        },
+      },
+      {
+        name: "close",
+        description: "Close focused window or app id",
+        run: (args) => {
+          const appId = args[0];
+          const targetId = appId
+            ? getWindowId(getAppWindowKind(appId), appId)
+            : state.focusedWindowId;
+          if (!targetId || !state.windows[targetId]) {
+            return `No open window: ${appId || "(focused)"}`;
+          }
+          closeWindow(targetId, { renderNow: false });
+          return `Closed ${targetId}`;
+        },
+      },
+      {
+        name: "wallpaper",
+        description: "List or set wallpaper",
+        run: (args) => {
+          if (!args[0]) {
+            return wallpaperOptions.map((option) => `${option.id} - ${option.name}`);
+          }
+          if (!wallpaperOptions.some((option) => option.id === args[0])) {
+            return `Unknown wallpaper: ${args[0]}`;
+          }
+          state.environment.wallpaper = args[0];
+          saveEnvironment();
+          return `Wallpaper set to ${args[0]}`;
+        },
+      },
+      {
+        name: "density",
+        description: "List or set icon density",
+        run: (args) => {
+          if (!args[0]) {
+            return densityOptions.map((option) => option.id).join(", ");
+          }
+          if (!densityOptions.some((option) => option.id === args[0])) {
+            return `Unknown density: ${args[0]}`;
+          }
+          state.environment.density = args[0];
+          saveEnvironment();
+          return `Density set to ${args[0]}`;
+        },
+      },
+      {
+        name: "music",
+        description: "music play|pause|next",
+        run: (args) => {
+          if (args[0] === "play") {
+            if (!state.music.localPlaying) {
+              toggleLocalAudioPlayback();
+            }
+            return "Music playing";
+          }
+          if (args[0] === "pause") {
+            if (state.music.localPlaying) {
+              toggleLocalAudioPlayback();
+            }
+            return "Music paused";
+          }
+          if (args[0] === "next") {
+            nextLocalAudioTrack({ autoplay: state.music.localPlaying });
+            return "Next track";
+          }
+          return "Usage: music play|pause|next";
+        },
+      },
+      {
+        name: "pet",
+        description: "pet on|off",
+        run: (args) => {
+          if (!["on", "off"].includes(args[0])) {
+            return `Desktop pet is ${state.pet.enabled ? "on" : "off"}`;
+          }
+          state.pet.enabled = args[0] === "on";
+          savePetSettings();
+          syncDesktopPet();
+          return `Desktop pet ${args[0]}`;
+        },
+      },
+      {
+        name: "date",
+        description: "Show local date",
+        run: () => new Intl.DateTimeFormat("ko-KR", { dateStyle: "full" }).format(state.now),
+      },
+      {
+        name: "time",
+        description: "Show local time",
+        run: () => new Intl.DateTimeFormat("ko-KR", { timeStyle: "medium" }).format(new Date()),
+      },
+      {
+        name: "neofetch",
+        description: "Show OS summary",
+        run: () => [
+          "CookieLab OS",
+          `apps: ${apps.length}`,
+          `windows: ${Object.keys(state.windows).length}`,
+          `theme: ${state.environment.wallpaper} / ${state.environment.density}`,
+          `memory saver: ${state.environment.memorySaver ? "on" : "off"}`,
+        ],
+      },
+      {
+        name: "clear",
+        description: "Clear terminal",
+        run: () => {
+          state.terminal.lines = [];
+          return "";
+        },
+      },
+    ];
+  }
+
+  function runTerminalCommand(commandText) {
+    const input = String(commandText || "").trim();
+    if (!input) {
+      render();
+      focusWindowInput(".terminal-input");
+      return;
+    }
+
+    terminalWrite(`cookielab$ ${input}`, "prompt");
+    state.terminal.history.push(input);
+    state.terminal.history = state.terminal.history.slice(-40);
+
+    const [name, ...args] = input.split(/\s+/);
+    const command = terminalCommandRegistry().find((item) => item.name === name);
+    const output = command ? command.run(args) : `Command not found: ${name}`;
+    if (output) {
+      terminalWrite(output, command ? "normal" : "error");
+    }
+
+    render();
+    if (state.focusedWindowId === "terminal") {
+      focusWindowInput(".terminal-input");
+    }
+  }
+
+  function activeNoteTab() {
+    return (
+      state.notes.tabs.find((tab) => tab.id === state.notes.activeTabId) ||
+      state.notes.tabs[0]
+    );
+  }
+
+  function selectNoteTab(id) {
+    if (!state.notes.tabs.some((tab) => tab.id === id)) {
+      return;
+    }
+    state.notes.activeTabId = id;
+    saveNotes();
+    render();
+    focusWindowElement("notes");
+  }
+
+  function addNoteTab() {
+    const id = `note-${Date.now().toString(36)}`;
+    state.notes.tabs.push({
+      id,
+      title: "Untitled",
+      body: "",
+      accent: "mint",
+    });
+    state.notes.activeTabId = id;
+    saveNotes();
+    render();
+    focusWindowInput(`[data-volatile-key="note-title-${id}"]`);
+  }
+
+  function deleteNoteTab(id) {
+    if (state.notes.tabs.length <= 1) {
+      state.notes.tabs[0] = { ...state.notes.tabs[0], title: "Scratchpad", body: "" };
+      state.notes.activeTabId = state.notes.tabs[0].id;
+    } else {
+      const index = state.notes.tabs.findIndex((tab) => tab.id === id);
+      state.notes.tabs = state.notes.tabs.filter((tab) => tab.id !== id);
+      if (state.notes.activeTabId === id) {
+        state.notes.activeTabId = state.notes.tabs[Math.max(0, index - 1)]?.id || state.notes.tabs[0].id;
+      }
+    }
+    saveNotes();
+    render();
+    focusWindowElement("notes");
+  }
+
+  function updateActiveNoteField(field, value) {
+    const tab = activeNoteTab();
+    if (!tab) {
+      return;
+    }
+    if (field === "title") {
+      tab.title = String(value || "Untitled").slice(0, 42);
+    } else if (field === "body") {
+      tab.body = String(value || "");
+    } else if (field === "accent" && ["mint", "blue", "yellow", "pink"].includes(value)) {
+      tab.accent = value;
+      render();
+      focusWindowElement("notes");
+    }
+    saveNotes();
+  }
+
+  function snippetsSearchQuery() {
+    return state.snippets.query.trim().toLowerCase();
+  }
+
+  function filteredSnippets() {
+    const query = snippetsSearchQuery();
+    if (!query) {
+      return state.snippets.items;
+    }
+    return state.snippets.items.filter((item) =>
+      [item.label, item.value, item.tag].some((value) =>
+        String(value).toLowerCase().includes(query),
+      ),
+    );
+  }
+
+  function updateSnippetDraft(field, value) {
+    if (!Object.prototype.hasOwnProperty.call(state.snippets.draft, field)) {
+      return;
+    }
+    state.snippets.draft[field] = String(value || "");
+  }
+
+  function addSnippetFromForm() {
+    const draft = state.snippets.draft;
+    if (!draft.label.trim() || !draft.value.trim()) {
+      state.notice = "Snippet needs a label and value.";
+      render();
+      focusWindowInput('[data-volatile-key="snippet-label"]');
+      return;
+    }
+
+    state.snippets.items.unshift({
+      id: `snip-${Date.now().toString(36)}`,
+      label: draft.label.trim(),
+      value: draft.value.trim(),
+      tag: draft.tag.trim() || "general",
+    });
+    state.snippets.draft = { label: "", value: "", tag: "general" };
+    saveSnippets();
+    render();
+    focusWindowInput('[data-volatile-key="snippet-label"]');
+  }
+
+  async function copySnippet(id) {
+    const snippet = state.snippets.items.find((item) => item.id === id);
+    if (!snippet) {
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(snippet.value);
+      state.notice = "Snippet copied.";
+    } catch {
+      state.notice = "Clipboard copy failed.";
+    }
+    render();
+    focusWindowElement("snippets");
+  }
+
+  function deleteSnippet(id) {
+    state.snippets.items = state.snippets.items.filter((item) => item.id !== id);
+    saveSnippets();
+    render();
+    focusWindowElement("snippets");
+  }
+
+  function normalizeBrowserUrl(value) {
+    const trimmed = String(value || "").trim();
+    if (!trimmed) {
+      return "";
+    }
+    const withProtocol = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+    return safeExternalUrl(withProtocol) === "#" ? "" : withProtocol;
+  }
+
+  function submitMiniBrowserUrl(value) {
+    const url = normalizeBrowserUrl(value);
+    if (!url) {
+      state.notice = "Enter a valid http or https URL.";
+      render();
+      focusWindowInput('[data-volatile-key="browser-url"]');
+      return;
+    }
+    state.browser.url = url;
+    saveBrowserState();
+    render();
+    focusWindowInput('[data-volatile-key="browser-url"]');
+  }
+
+  function setMiniBrowserDevice(device) {
+    if (!["desktop", "tablet", "phone"].includes(device)) {
+      return;
+    }
+    state.browser.device = device;
+    saveBrowserState();
+    render();
+    focusWindowElement("mini-browser");
+  }
+
+  function tokenizeCalculatorExpression(expression) {
+    const tokens = [];
+    let index = 0;
+    let expectValue = true;
+    while (index < expression.length) {
+      const char = expression[index];
+      if (/\s/.test(char)) {
+        index += 1;
+        continue;
+      }
+      if (/[0-9.]/.test(char) || (char === "-" && expectValue && /[0-9.]/.test(expression[index + 1]))) {
+        let value = char === "-" ? "-" : "";
+        index += char === "-" ? 1 : 0;
+        while (index < expression.length && /[0-9.]/.test(expression[index])) {
+          value += expression[index];
+          index += 1;
+        }
+        const number = Number(value);
+        if (!Number.isFinite(number)) {
+          throw new Error("Invalid number");
+        }
+        if (expression[index] === "%") {
+          tokens.push({ type: "number", value: number / 100 });
+          index += 1;
+        } else {
+          tokens.push({ type: "number", value: number });
+        }
+        expectValue = false;
+        continue;
+      }
+      if ("+-*/()".includes(char)) {
+        tokens.push({ type: "operator", value: char });
+        expectValue = char !== ")";
+        index += 1;
+        continue;
+      }
+      throw new Error("Invalid character");
+    }
+    return tokens;
+  }
+
+  function evaluateCalculatorExpression(expression) {
+    const precedence = { "+": 1, "-": 1, "*": 2, "/": 2 };
+    const output = [];
+    const operators = [];
+    tokenizeCalculatorExpression(expression).forEach((token) => {
+      if (token.type === "number") {
+        output.push(token.value);
+        return;
+      }
+      const operator = token.value;
+      if (operator === "(") {
+        operators.push(operator);
+        return;
+      }
+      if (operator === ")") {
+        while (operators.length && operators[operators.length - 1] !== "(") {
+          output.push(operators.pop());
+        }
+        if (operators.pop() !== "(") {
+          throw new Error("Mismatched parentheses");
+        }
+        return;
+      }
+      while (
+        operators.length &&
+        precedence[operators[operators.length - 1]] >= precedence[operator]
+      ) {
+        output.push(operators.pop());
+      }
+      operators.push(operator);
+    });
+    while (operators.length) {
+      const operator = operators.pop();
+      if (operator === "(") {
+        throw new Error("Mismatched parentheses");
+      }
+      output.push(operator);
+    }
+
+    const stack = [];
+    output.forEach((token) => {
+      if (typeof token === "number") {
+        stack.push(token);
+        return;
+      }
+      const right = stack.pop();
+      const left = stack.pop();
+      if (!Number.isFinite(left) || !Number.isFinite(right)) {
+        throw new Error("Invalid expression");
+      }
+      if (token === "+") stack.push(left + right);
+      if (token === "-") stack.push(left - right);
+      if (token === "*") stack.push(left * right);
+      if (token === "/") stack.push(left / right);
+    });
+    if (stack.length !== 1 || !Number.isFinite(stack[0])) {
+      throw new Error("Invalid expression");
+    }
+    return stack[0];
+  }
+
+  function formatCalculatorResult(value) {
+    return Number.isInteger(value)
+      ? String(value)
+      : String(Number(value.toFixed(8))).replace(/\.0+$/, "");
+  }
+
+  function inputCalculator(value) {
+    if (value === "clear") {
+      state.calculator.expression = "";
+      state.calculator.result = "0";
+    } else if (value === "backspace") {
+      state.calculator.expression = state.calculator.expression.slice(0, -1);
+    } else if (value === "equals") {
+      try {
+        const expression = state.calculator.expression || state.calculator.result;
+        const result = formatCalculatorResult(evaluateCalculatorExpression(expression));
+        state.calculator.history.unshift(`${expression} = ${result}`);
+        state.calculator.history = state.calculator.history.slice(0, 8);
+        state.calculator.expression = result;
+        state.calculator.result = result;
+      } catch {
+        state.calculator.result = "Error";
+      }
+    } else {
+      state.calculator.expression += value;
+    }
+    render();
+    focusWindowElement("calculator");
   }
 
   function nextMusicTrack() {
