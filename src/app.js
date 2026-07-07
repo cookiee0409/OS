@@ -68,6 +68,10 @@
   const notesStorageKey = "cookielab-os-notes";
   const snippetsStorageKey = "cookielab-os-snippets";
   const browserStorageKey = "cookielab-os-browser";
+  const customWallpaperDbName = "cookielab-os-assets";
+  const customWallpaperStoreName = "wallpapers";
+  const customWallpaperKey = "active";
+  const customWallpaperFallbackKey = "cookielab-os-custom-wallpaper";
 
   // 상단 헤더 전광판에 표시할 주요 코인 (CoinGecko id 기준).
   const cryptoTickerCoins = [
@@ -109,6 +113,11 @@
       id: "mint",
       name: "Mint Beam",
       description: "민트와 시안, 블루가 맑게 번지는 배경",
+    },
+    {
+      id: "custom",
+      name: "Custom Upload",
+      description: "Use an imported image as the desktop wallpaper.",
     },
     {
       id: "night",
@@ -587,6 +596,11 @@
       },
     },
     browser: loadBrowserState(),
+    customWallpaper: {
+      dataUrl: "",
+      name: "",
+      updatedAt: 0,
+    },
     calculator: {
       expression: "",
       result: "0",
@@ -603,6 +617,7 @@
   let activeWindowGesture = null;
   let activeDockGesture = null;
   let suppressDockClick = false;
+  let snapPreviewElement = null;
   const windowSuspendTimers = new Map();
   const audioEngine = {
     context: null,
@@ -1506,6 +1521,197 @@
     }
   }
 
+  function normalizeCustomWallpaperRecord(record) {
+    if (
+      !record ||
+      typeof record.dataUrl !== "string" ||
+      !record.dataUrl.startsWith("data:image/")
+    ) {
+      return null;
+    }
+
+    return {
+      dataUrl: record.dataUrl,
+      name: String(record.name || "Custom wallpaper").slice(0, 80),
+      updatedAt: Number(record.updatedAt) || Date.now(),
+    };
+  }
+
+  function openCustomWallpaperDb() {
+    return new Promise((resolve, reject) => {
+      if (!window.indexedDB) {
+        reject(new Error("IndexedDB unavailable"));
+        return;
+      }
+
+      const request = indexedDB.open(customWallpaperDbName, 1);
+      request.addEventListener("upgradeneeded", () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains(customWallpaperStoreName)) {
+          db.createObjectStore(customWallpaperStoreName);
+        }
+      });
+      request.addEventListener("success", () => resolve(request.result));
+      request.addEventListener("error", () => reject(request.error));
+    });
+  }
+
+  async function readCustomWallpaperRecord() {
+    const db = await openCustomWallpaperDb();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(customWallpaperStoreName, "readonly");
+      const request = transaction.objectStore(customWallpaperStoreName).get(customWallpaperKey);
+      request.addEventListener("success", () => {
+        db.close();
+        resolve(normalizeCustomWallpaperRecord(request.result));
+      });
+      request.addEventListener("error", () => {
+        db.close();
+        reject(request.error);
+      });
+    });
+  }
+
+  async function writeCustomWallpaperRecord(record) {
+    const db = await openCustomWallpaperDb();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(customWallpaperStoreName, "readwrite");
+      transaction.objectStore(customWallpaperStoreName).put(record, customWallpaperKey);
+      transaction.addEventListener("complete", () => {
+        db.close();
+        resolve();
+      });
+      transaction.addEventListener("error", () => {
+        db.close();
+        reject(transaction.error);
+      });
+    });
+  }
+
+  async function deleteCustomWallpaperRecord() {
+    const db = await openCustomWallpaperDb();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(customWallpaperStoreName, "readwrite");
+      transaction.objectStore(customWallpaperStoreName).delete(customWallpaperKey);
+      transaction.addEventListener("complete", () => {
+        db.close();
+        resolve();
+      });
+      transaction.addEventListener("error", () => {
+        db.close();
+        reject(transaction.error);
+      });
+    });
+  }
+
+  function readCustomWallpaperFallback() {
+    try {
+      return normalizeCustomWallpaperRecord(
+        JSON.parse(localStorage.getItem(customWallpaperFallbackKey) || "null"),
+      );
+    } catch {
+      return null;
+    }
+  }
+
+  function saveCustomWallpaperFallback(record) {
+    try {
+      localStorage.setItem(customWallpaperFallbackKey, JSON.stringify(record));
+    } catch {
+      /* Large images can exceed localStorage. IndexedDB remains the primary store. */
+    }
+  }
+
+  async function hydrateCustomWallpaper() {
+    let record = null;
+    try {
+      record = await readCustomWallpaperRecord();
+    } catch {
+      record = readCustomWallpaperFallback();
+    }
+
+    if (record) {
+      state.customWallpaper = record;
+    } else if (state.environment.wallpaper === "custom") {
+      state.environment.wallpaper = defaultEnvironment.wallpaper;
+      saveEnvironment();
+    }
+
+    if (state.bootPhase === "ready" || state.windows["system-folder"]) {
+      render();
+    } else {
+      applyEnvironment();
+    }
+  }
+
+  function readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.addEventListener("load", () => resolve(String(reader.result || "")));
+      reader.addEventListener("error", () => reject(reader.error));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function importCustomWallpaperFile(file) {
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      state.notice = "Choose an image file for the wallpaper.";
+      render();
+      focusSystemFolder();
+      return;
+    }
+
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      const record = normalizeCustomWallpaperRecord({
+        dataUrl,
+        name: file.name,
+        updatedAt: Date.now(),
+      });
+      if (!record) {
+        throw new Error("Invalid image data");
+      }
+
+      state.customWallpaper = record;
+      state.environment.wallpaper = "custom";
+      state.environment.wallpaperEnabled = true;
+      state.notice = "Custom wallpaper imported.";
+      saveEnvironment();
+      try {
+        await writeCustomWallpaperRecord(record);
+        localStorage.removeItem(customWallpaperFallbackKey);
+      } catch {
+        saveCustomWallpaperFallback(record);
+      }
+    } catch {
+      state.notice = "Custom wallpaper import failed.";
+    }
+
+    render();
+    focusSystemFolder();
+  }
+
+  async function clearCustomWallpaper() {
+    state.customWallpaper = { dataUrl: "", name: "", updatedAt: 0 };
+    if (state.environment.wallpaper === "custom") {
+      state.environment.wallpaper = defaultEnvironment.wallpaper;
+    }
+    state.notice = "Custom wallpaper removed.";
+    saveEnvironment();
+    try {
+      await deleteCustomWallpaperRecord();
+    } catch {
+      /* Fallback cleanup still happens below. */
+    }
+    localStorage.removeItem(customWallpaperFallbackKey);
+    render();
+    focusSystemFolder();
+  }
+
   async function fetchCryptoPrices() {
     try {
       const response = await fetch(cryptoPriceEndpoint, {
@@ -1570,7 +1776,22 @@
   }
 
   function applyEnvironment() {
-    document.documentElement.style.fontSize = `${Math.round(state.environment.scale * 100)}%`;
+    const rootStyle = document.documentElement.style;
+    rootStyle.fontSize = `${Math.round(state.environment.scale * 100)}%`;
+
+    if (state.customWallpaper.dataUrl) {
+      rootStyle.setProperty(
+        "--custom-wallpaper-image",
+        `url("${state.customWallpaper.dataUrl}") center / cover no-repeat`,
+      );
+      rootStyle.setProperty(
+        "--custom-wallpaper-preview",
+        `url("${state.customWallpaper.dataUrl}") center / cover no-repeat`,
+      );
+    } else {
+      rootStyle.removeProperty("--custom-wallpaper-image");
+      rootStyle.removeProperty("--custom-wallpaper-preview");
+    }
   }
 
   function selectedMusicTrack() {
@@ -2688,6 +2909,9 @@
         `;
       })
       .join("");
+    const customWallpaperName =
+      state.customWallpaper.name || "No custom wallpaper imported.";
+    const customWallpaperRemoveDisabled = state.customWallpaper.dataUrl ? "" : " disabled";
 
     return WindowPanel({
       id: windowState.id,
@@ -2717,6 +2941,19 @@
           </div>
           <div class="wallpaper-grid">
             ${wallpaperButtons}
+          </div>
+        </section>
+        <section class="settings-section" aria-labelledby="custom-wallpaper-title">
+          <h3 id="custom-wallpaper-title">Custom Wallpaper</h3>
+          <div class="custom-wallpaper-panel">
+            <span class="custom-wallpaper-name">${escapeHtml(customWallpaperName)}</span>
+            <div class="custom-wallpaper-actions">
+              <label class="retro-button theme-import-button">
+                Upload Image
+                <input class="visually-hidden" type="file" accept="image/*" data-action="import-custom-wallpaper-file" />
+              </label>
+              <button class="retro-button ghost" type="button" data-action="clear-custom-wallpaper"${customWallpaperRemoveDisabled}>Remove</button>
+            </div>
           </div>
         </section>
         <section class="settings-section" aria-labelledby="visual-settings-title">
@@ -3541,6 +3778,50 @@
     `;
   }
 
+  function CommandPalette() {
+    if (!state.commandPalette.open) {
+      return "";
+    }
+
+    const items = commandPaletteMatches()
+      .map(
+        (app) => `
+          <button
+            class="command-palette-item"
+            type="button"
+            data-action="command-palette-open-app"
+            data-app-id="${escapeHtml(app.id)}"
+          >
+            <span>${IconAsset(app.icon, "command-palette-icon", 22)}</span>
+            <span>
+              <strong>${escapeHtml(app.name)}</strong>
+              <small>${escapeHtml(app.category)}</small>
+            </span>
+          </button>
+        `,
+      )
+      .join("");
+
+    return `
+      <div class="command-palette-backdrop">
+        <section class="command-palette" role="dialog" aria-modal="true" aria-label="Command palette">
+          <button class="command-palette-close" type="button" data-action="close-command-palette" aria-label="Close">×</button>
+          <input
+            class="command-palette-input"
+            data-action="set-command-palette-query"
+            data-volatile-key="command-palette-query"
+            value="${escapeHtml(state.commandPalette.query)}"
+            placeholder="Search apps"
+            aria-label="Search apps"
+          />
+          <div class="command-palette-list">
+            ${items || '<div class="command-palette-empty">No matches</div>'}
+          </div>
+        </section>
+      </div>
+    `;
+  }
+
   function Taskbar() {
     const focusedWindow = state.windows[state.focusedWindowId];
     const currentTrack = selectedMusicTrack();
@@ -3766,6 +4047,27 @@
       return SchedulerWindow(windowState);
     }
 
+    const app = appById(windowState.appId || windowState.kind);
+    if (windowState.kind === "terminal" && app) {
+      return TerminalWindow(app, windowState);
+    }
+
+    if (windowState.kind === "notes" && app) {
+      return NotesWindow(app, windowState);
+    }
+
+    if (windowState.kind === "snippets" && app) {
+      return SnippetsWindow(app, windowState);
+    }
+
+    if (windowState.kind === "mini-browser" && app) {
+      return MiniBrowserWindow(app, windowState);
+    }
+
+    if (windowState.kind === "calculator" && app) {
+      return CalculatorWindow(app, windowState);
+    }
+
     return AppDetailWindow(windowState);
   }
 
@@ -3818,6 +4120,7 @@
           ${WindowLayer()}
         </main>
         ${StartMenu()}
+        ${CommandPalette()}
         ${state.notice ? `<div class="desktop-toast" role="status">${escapeHtml(state.notice)}</div>` : ""}
         ${LocalAudioDockPlayer()}
         ${Taskbar()}
@@ -3898,8 +4201,9 @@
     }
   }
 
-  function render() {
-    const volatileState = captureVolatileState();
+  function render(options = {}) {
+    const { restoreVolatile = true } = options;
+    const volatileState = restoreVolatile ? captureVolatileState() : null;
     applyEnvironment();
     root.innerHTML = `
       ${state.bootPhase !== "ready" ? BootScreen() : ""}
@@ -3909,6 +4213,9 @@
       windowState.opening = false;
     });
     restoreVolatileState(volatileState);
+    document.querySelectorAll(".terminal-screen").forEach((element) => {
+      element.scrollTop = element.scrollHeight;
+    });
   }
 
   function selectApp(id) {
@@ -3987,7 +4294,7 @@
       title,
     });
     saveSchedules();
-    render();
+    render({ restoreVolatile: false });
     focusSchedulerTitleInput();
   }
 
@@ -4167,6 +4474,9 @@
           if (!wallpaperOptions.some((option) => option.id === args[0])) {
             return `Unknown wallpaper: ${args[0]}`;
           }
+          if (args[0] === "custom" && !state.customWallpaper.dataUrl) {
+            return "Upload a custom wallpaper first.";
+          }
           state.environment.wallpaper = args[0];
           saveEnvironment();
           return `Wallpaper set to ${args[0]}`;
@@ -4274,7 +4584,7 @@
       terminalWrite(output, command ? "normal" : "error");
     }
 
-    render();
+    render({ restoreVolatile: false });
     if (state.focusedWindowId === "terminal") {
       focusWindowInput(".terminal-input");
     }
@@ -4334,6 +4644,7 @@
     }
     if (field === "title") {
       tab.title = String(value || "Untitled").slice(0, 42);
+      render();
     } else if (field === "body") {
       tab.body = String(value || "");
     } else if (field === "accent" && ["mint", "blue", "yellow", "pink"].includes(value)) {
@@ -4384,7 +4695,7 @@
     });
     state.snippets.draft = { label: "", value: "", tag: "general" };
     saveSnippets();
-    render();
+    render({ restoreVolatile: false });
     focusWindowInput('[data-volatile-key="snippet-label"]');
   }
 
@@ -4429,7 +4740,7 @@
     }
     state.browser.url = url;
     saveBrowserState();
-    render();
+    render({ restoreVolatile: false });
     focusWindowInput('[data-volatile-key="browser-url"]');
   }
 
@@ -4575,6 +4886,50 @@
     focusWindowElement("calculator");
   }
 
+  function commandPaletteMatches() {
+    const query = state.commandPalette.query.trim().toLowerCase();
+    return apps
+      .filter((app) => {
+        if (!query) {
+          return true;
+        }
+        return [app.id, app.name, app.category, app.description].some((value) =>
+          String(value || "").toLowerCase().includes(query),
+        );
+      })
+      .slice(0, 8);
+  }
+
+  function openCommandPalette() {
+    state.commandPalette.open = true;
+    state.commandPalette.query = "";
+    state.startOpen = false;
+    state.notice = "";
+    render();
+    focusWindowInput('[data-volatile-key="command-palette-query"]');
+  }
+
+  function closeCommandPalette() {
+    state.commandPalette.open = false;
+    state.commandPalette.query = "";
+    render();
+  }
+
+  function updateCommandPaletteQuery(value) {
+    state.commandPalette.query = String(value || "");
+    render();
+  }
+
+  function runCommandPaletteApp(appId) {
+    const app = appById(appId);
+    if (!app) {
+      return;
+    }
+    state.commandPalette.open = false;
+    state.commandPalette.query = "";
+    openWindow(getAppWindowKind(app.id), { appId: app.id });
+  }
+
   function nextMusicTrack() {
     const currentIndex = musicTracks.findIndex(
       (track) => track.id === state.music.trackId,
@@ -4585,6 +4940,13 @@
 
   function setWallpaper(id) {
     if (!wallpaperOptions.some((option) => option.id === id)) {
+      return;
+    }
+
+    if (id === "custom" && !state.customWallpaper.dataUrl) {
+      state.notice = "Upload a custom wallpaper first.";
+      render();
+      focusSystemFolder();
       return;
     }
 
@@ -4639,6 +5001,8 @@
       version: 1,
       environment: {
         wallpaper: state.environment.wallpaper,
+        wallpaperEnabled: Boolean(state.environment.wallpaperEnabled),
+        customWallpaperName: state.customWallpaper.name || "",
         grid: Boolean(state.environment.grid),
         glow: Boolean(state.environment.glow),
         density: state.environment.density,
@@ -4659,9 +5023,14 @@
 
     return {
       ...state.environment,
-      wallpaper: wallpaperOptions.some((option) => option.id === imported.wallpaper)
+      wallpaper: wallpaperOptions.some((option) => option.id === imported.wallpaper) &&
+        (imported.wallpaper !== "custom" || state.customWallpaper.dataUrl)
         ? imported.wallpaper
         : state.environment.wallpaper,
+      wallpaperEnabled:
+        typeof imported.wallpaperEnabled === "boolean"
+          ? imported.wallpaperEnabled
+          : state.environment.wallpaperEnabled,
       density: densityOptions.some((option) => option.id === imported.density)
         ? imported.density
         : state.environment.density,
@@ -4690,8 +5059,10 @@
     const anchor = document.createElement("a");
     anchor.href = url;
     anchor.download = "cookielab-os-theme.json";
+    document.body.appendChild(anchor);
     anchor.click();
-    URL.revokeObjectURL(url);
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
   }
 
   function importThemeFile(file) {
@@ -4749,6 +5120,116 @@
     focusSystemFolder();
   }
 
+  function snapBoundsForTarget(target, windowState) {
+    const area = getWindowWorkArea();
+    const margin = desktopFrame.margin;
+    const halfWidth = Math.floor((area.width - margin * 3) / 2);
+    if (target === "left") {
+      return {
+        x: margin,
+        y: margin,
+        width: halfWidth,
+        height: area.height - margin * 2,
+      };
+    }
+    if (target === "right") {
+      return {
+        x: area.width - halfWidth - margin,
+        y: margin,
+        width: halfWidth,
+        height: area.height - margin * 2,
+      };
+    }
+    if (target === "top") {
+      return {
+        x: margin,
+        y: margin,
+        width: area.width - margin * 2,
+        height: area.height - margin * 2,
+      };
+    }
+    return {
+      x: windowState.x,
+      y: windowState.y,
+      width: windowState.width,
+      height: windowState.height,
+    };
+  }
+
+  function snapTargetForGesture(gesture) {
+    const area = getWindowWorkArea();
+    const threshold = 24;
+    if (gesture.y <= threshold) {
+      return "top";
+    }
+    if (gesture.x <= threshold) {
+      return "left";
+    }
+    if (gesture.x + gesture.startWidth >= area.width - threshold) {
+      return "right";
+    }
+    return "";
+  }
+
+  function ensureSnapPreviewElement() {
+    if (!snapPreviewElement) {
+      snapPreviewElement = document.createElement("div");
+      snapPreviewElement.className = "window-snap-preview";
+      snapPreviewElement.setAttribute("aria-hidden", "true");
+    }
+    const layer = document.querySelector(".window-layer");
+    if (layer && !snapPreviewElement.parentElement) {
+      layer.appendChild(snapPreviewElement);
+    }
+    return snapPreviewElement;
+  }
+
+  function updateSnapPreview(target, windowState) {
+    if (!target || !windowState) {
+      clearSnapPreview();
+      return;
+    }
+    const bounds = snapBoundsForTarget(target, windowState);
+    const preview = ensureSnapPreviewElement();
+    preview.style.left = `${bounds.x}px`;
+    preview.style.top = `${bounds.y}px`;
+    preview.style.width = `${bounds.width}px`;
+    preview.style.height = `${bounds.height}px`;
+    preview.dataset.snapTarget = target;
+  }
+
+  function clearSnapPreview() {
+    snapPreviewElement?.remove();
+  }
+
+  function magnetizeWindowGesture(gesture) {
+    const threshold = 8;
+    const moving = {
+      left: gesture.x,
+      right: gesture.x + gesture.startWidth,
+      top: gesture.y,
+      bottom: gesture.y + gesture.startHeight,
+    };
+    Object.values(state.windows)
+      .filter((windowState) => windowState.id !== gesture.id && !windowState.minimized)
+      .forEach((windowState) => {
+        const other = {
+          left: windowState.x,
+          right: windowState.x + windowState.width,
+          top: windowState.y,
+          bottom: windowState.y + windowState.height,
+        };
+        if (Math.abs(moving.left - other.left) <= threshold) gesture.x = other.left;
+        if (Math.abs(moving.left - other.right) <= threshold) gesture.x = other.right;
+        if (Math.abs(moving.right - other.left) <= threshold) gesture.x = other.left - gesture.startWidth;
+        if (Math.abs(moving.right - other.right) <= threshold) gesture.x = other.right - gesture.startWidth;
+        if (Math.abs(moving.top - other.top) <= threshold) gesture.y = other.top;
+        if (Math.abs(moving.top - other.bottom) <= threshold) gesture.y = other.bottom;
+        if (Math.abs(moving.bottom - other.top) <= threshold) gesture.y = other.top - gesture.startHeight;
+        if (Math.abs(moving.bottom - other.bottom) <= threshold) gesture.y = other.bottom - gesture.startHeight;
+      });
+  }
+
   function updateWindowGesture(event) {
     if (!activeWindowGesture) {
       return;
@@ -4776,11 +5257,25 @@
         margin,
         Math.max(margin, area.height - activeWindowGesture.startHeight - margin),
       );
+      magnetizeWindowGesture(activeWindowGesture);
+      activeWindowGesture.x = clamp(
+        activeWindowGesture.x,
+        margin,
+        Math.max(margin, area.width - activeWindowGesture.startWidth - margin),
+      );
+      activeWindowGesture.y = clamp(
+        activeWindowGesture.y,
+        margin,
+        Math.max(margin, area.height - activeWindowGesture.startHeight - margin),
+      );
+      activeWindowGesture.snapTarget = snapTargetForGesture(activeWindowGesture);
+      updateSnapPreview(activeWindowGesture.snapTarget, windowState);
       element.style.left = `${activeWindowGesture.x}px`;
       element.style.top = `${activeWindowGesture.y}px`;
       return;
     }
 
+    clearSnapPreview();
     const resizeEdge = activeWindowGesture.edge || "se";
     if (resizeEdge.includes("e")) {
       activeWindowGesture.width = clamp(
@@ -4813,9 +5308,21 @@
     const element = document.getElementById(gesture.id);
 
     if (windowState) {
-      if (gesture.type === "drag") {
+      if (gesture.type === "drag" && gesture.snapTarget) {
+        if (!windowState.maximized) {
+          windowState.prevBounds = {
+            x: windowState.x,
+            y: windowState.y,
+            width: windowState.width,
+            height: windowState.height,
+          };
+        }
+        Object.assign(windowState, snapBoundsForTarget(gesture.snapTarget, windowState));
+        windowState.maximized = gesture.snapTarget === "top";
+      } else if (gesture.type === "drag") {
         windowState.x = gesture.x;
         windowState.y = gesture.y;
+        windowState.maximized = false;
       } else {
         windowState.width = gesture.width;
         windowState.height = gesture.height;
@@ -4833,6 +5340,7 @@
 
     element?.classList.remove("is-moving", "is-resizing");
     activeWindowGesture = null;
+    clearSnapPreview();
     if (gesture.id) {
       focusWindowElement(gesture.id);
     }
@@ -5030,7 +5538,11 @@
   root.addEventListener("dblclick", (event) => {
     const titlebar = event.target.closest(".window-titlebar");
     const panel = event.target.closest(".window-panel[data-window-id]");
-    if (!titlebar || !panel || event.target.closest(".window-controls")) {
+    if (
+      !titlebar ||
+      !panel ||
+      event.target.closest(`.window-controls, ${interactiveControlSelector}`)
+    ) {
       return;
     }
 
@@ -5045,6 +5557,14 @@
     // 미니 플레이어를 드래그로 옮긴 직후의 click 은 무시(제목이 눌리지 않게).
     if (suppressDockClick && event.target.closest(".local-audio-dock")) {
       suppressDockClick = false;
+      return;
+    }
+
+    if (
+      state.commandPalette.open &&
+      event.target.classList?.contains("command-palette-backdrop")
+    ) {
+      closeCommandPalette();
       return;
     }
 
@@ -5152,6 +5672,68 @@
       return;
     }
 
+    if (action === "terminal-clear") {
+      state.terminal.lines = [];
+      render();
+      focusWindowInput(".terminal-input");
+      return;
+    }
+
+    if (action === "select-note-tab") {
+      selectNoteTab(trigger.dataset.noteId);
+      return;
+    }
+
+    if (action === "add-note-tab") {
+      addNoteTab();
+      return;
+    }
+
+    if (action === "delete-note-tab") {
+      deleteNoteTab(trigger.dataset.noteId);
+      return;
+    }
+
+    if (action === "set-note-accent") {
+      updateActiveNoteField("accent", trigger.dataset.accent);
+      return;
+    }
+
+    if (action === "copy-snippet") {
+      copySnippet(trigger.dataset.snippetId);
+      return;
+    }
+
+    if (action === "delete-snippet") {
+      deleteSnippet(trigger.dataset.snippetId);
+      return;
+    }
+
+    if (action === "set-browser-device") {
+      setMiniBrowserDevice(trigger.dataset.device);
+      return;
+    }
+
+    if (action === "set-browser-url") {
+      submitMiniBrowserUrl(trigger.dataset.url);
+      return;
+    }
+
+    if (action === "calculator-input") {
+      inputCalculator(trigger.dataset.calcValue);
+      return;
+    }
+
+    if (action === "command-palette-open-app") {
+      runCommandPaletteApp(trigger.dataset.appId);
+      return;
+    }
+
+    if (action === "close-command-palette") {
+      closeCommandPalette();
+      return;
+    }
+
     if (action === "set-wallpaper") {
       setWallpaper(trigger.dataset.wallpaper);
       return;
@@ -5174,6 +5756,11 @@
 
     if (action === "export-theme") {
       exportTheme();
+      return;
+    }
+
+    if (action === "clear-custom-wallpaper") {
+      clearCustomWallpaper();
       return;
     }
 
@@ -5254,10 +5841,34 @@
   });
 
   root.addEventListener("submit", (event) => {
-    const form = event.target.closest("[data-scheduler-form]");
+    const form = event.target.closest("form");
     if (!form) {
       return;
     }
+
+    if (form.matches("[data-terminal-form]")) {
+      event.preventDefault();
+      const input = form.querySelector("[data-terminal-input]");
+      runTerminalCommand(input?.value);
+      return;
+    }
+
+    if (form.matches("[data-snippet-form]")) {
+      event.preventDefault();
+      addSnippetFromForm();
+      return;
+    }
+
+    if (form.matches("[data-browser-form]")) {
+      event.preventDefault();
+      submitMiniBrowserUrl(form.querySelector(".browser-url-input")?.value);
+      return;
+    }
+
+    if (!form.matches("[data-scheduler-form]")) {
+      return;
+    }
+
     event.preventDefault();
     addScheduleFromForm(form);
   });
@@ -5275,6 +5886,27 @@
     if (trigger.dataset.action === "set-local-audio-progress") {
       setLocalAudioProgress(trigger.value);
     }
+
+    if (trigger.dataset.action === "update-note-title") {
+      updateActiveNoteField("title", trigger.value);
+    }
+
+    if (trigger.dataset.action === "update-note-body") {
+      updateActiveNoteField("body", trigger.value);
+    }
+
+    if (trigger.dataset.action === "set-snippet-query") {
+      state.snippets.query = trigger.value;
+      render();
+    }
+
+    if (trigger.dataset.action === "update-snippet-draft") {
+      updateSnippetDraft(trigger.dataset.field, trigger.value);
+    }
+
+    if (trigger.dataset.action === "set-command-palette-query") {
+      updateCommandPaletteQuery(trigger.value);
+    }
   });
 
   root.addEventListener("change", (event) => {
@@ -5285,6 +5917,11 @@
 
     if (trigger.dataset.action === "import-theme-file") {
       importThemeFile(trigger.files?.[0]);
+      trigger.value = "";
+    }
+
+    if (trigger.dataset.action === "import-custom-wallpaper-file") {
+      importCustomWallpaperFile(trigger.files?.[0]);
       trigger.value = "";
     }
   });
@@ -5332,6 +5969,7 @@
     }
 
     normalizeWindowBounds(windowState);
+    saveWindowLayout();
     render();
     focusWindowElement(windowState.id);
   });
@@ -5346,7 +5984,32 @@
   });
 
   document.addEventListener("keydown", (event) => {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+      event.preventDefault();
+      openCommandPalette();
+      return;
+    }
+
+    if (
+      state.commandPalette.open &&
+      event.key === "Enter" &&
+      event.target.matches?.(".command-palette-input")
+    ) {
+      event.preventDefault();
+      const firstApp = commandPaletteMatches()[0];
+      if (firstApp) {
+        runCommandPaletteApp(firstApp.id);
+      }
+      return;
+    }
+
     if (event.key !== "Escape") {
+      return;
+    }
+
+    if (state.commandPalette.open) {
+      event.preventDefault();
+      closeCommandPalette();
       return;
     }
 
@@ -5456,6 +6119,7 @@
   initializeDesktopPet();
   initGlassCursor();
   render();
+  hydrateCustomWallpaper();
 
   setTimeout(() => {
     state.bootPhase = "hiding";
