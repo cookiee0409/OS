@@ -1079,13 +1079,9 @@ a {
   background: #ffffff;
 }
 
-.terminal-window .window-body,
-.mini-browser-window .window-body {
+.terminal-window .window-body {
   display: flex;
   flex-direction: column;
-}
-
-.terminal-window .window-body {
   gap: 0;
   padding: 0;
   background: #05070d;
@@ -1136,11 +1132,7 @@ a {
 }
 
 .terminal-input,
-.note-title-input,
-.snippet-search,
-.snippet-form input,
-.snippet-form textarea,
-.browser-url-input {
+.note-title-input {
   width: 100%;
   min-width: 0;
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -1253,152 +1245,6 @@ a {
 .notes-accent-yellow .note-body-input { border-left-color: var(--accent-yellow); }
 .notes-accent-pink .note-body-input { border-left-color: var(--danger); }
 
-.snippet-search {
-  height: 40px;
-  padding: 0 10px;
-  margin-bottom: 12px;
-}
-
-.snippet-list {
-  display: grid;
-  gap: 8px;
-  margin: 0 0 14px;
-  padding: 0;
-  list-style: none;
-}
-
-.snippet-item {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 12px;
-  align-items: center;
-  padding: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.04);
-}
-
-.snippet-main {
-  min-width: 0;
-}
-
-.snippet-main strong,
-.snippet-main code {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.snippet-main code {
-  color: var(--text-muted);
-  font-size: 0.78rem;
-}
-
-.snippet-tag {
-  display: inline-block;
-  margin-bottom: 4px;
-  color: var(--accent-blue);
-  font-family: var(--mono);
-  font-size: 0.68rem;
-}
-
-.snippet-actions {
-  display: flex;
-  gap: 6px;
-}
-
-.snippet-empty {
-  color: var(--text-muted);
-}
-
-.snippet-form {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 120px;
-  gap: 8px;
-}
-
-.snippet-form input {
-  height: 38px;
-  padding: 0 10px;
-}
-
-.snippet-form textarea {
-  grid-column: 1 / -1;
-  min-height: 82px;
-  resize: vertical;
-  padding: 10px;
-}
-
-.snippet-form button {
-  grid-column: 1 / -1;
-}
-
-.browser-toolbar {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
-.browser-url-input {
-  height: 38px;
-  padding: 0 10px;
-}
-
-.browser-device-control {
-  margin-bottom: 10px;
-}
-
-.browser-presets {
-  display: flex;
-  gap: 6px;
-  overflow-x: auto;
-  padding-bottom: 10px;
-}
-
-.browser-preset {
-  flex: 0 0 auto;
-  max-width: 150px;
-  overflow: hidden;
-  padding: 7px 9px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--text-main);
-  cursor: pointer;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.browser-preview {
-  display: grid;
-  flex: 1 1 auto;
-  min-height: 0;
-  place-items: center;
-  overflow: auto;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  background: rgba(5, 7, 13, 0.6);
-}
-
-.browser-preview-frame {
-  width: 100%;
-  height: 100%;
-  min-height: 360px;
-  border: 0;
-  border-radius: 6px;
-  background: #fff;
-}
-
-.browser-preview-tablet .browser-preview-frame {
-  width: min(768px, 100%);
-}
-
-.browser-preview-phone .browser-preview-frame {
-  width: min(375px, 100%);
-}
-
 .calculator-window {
   min-width: 320px;
 }
@@ -1465,20 +1311,6 @@ a {
 }
 
 @media (max-width: 640px) {
-  .snippet-item,
-  .snippet-form,
-  .browser-toolbar {
-    grid-template-columns: 1fr;
-  }
-
-  .snippet-actions {
-    flex-wrap: wrap;
-  }
-
-  .browser-preview-frame {
-    min-height: 280px;
-  }
-
   .command-palette-backdrop {
     align-items: start;
     padding-top: 58px;
@@ -4511,69 +4343,6 @@ body::before {
 }
 
 /* ==========================================================================
-   우측 프로젝트 컬럼: 아이콘 + 설명 리스트형
-   ========================================================================== */
-.desktop-icons-right .app-grid.app-list {
-  grid-template-columns: 1fr;
-  gap: 8px;
-}
-
-.app-icon.app-icon-list {
-  flex-direction: row;
-  min-height: 0;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  text-align: left;
-}
-
-.app-icon.app-icon-list .app-icon-visual {
-  flex: 0 0 auto;
-  width: 44px;
-  height: 44px;
-  font-size: 1.5rem;
-}
-
-.app-icon-list-text {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  min-width: 0;
-  text-align: left;
-}
-
-.app-icon.app-icon-list .app-icon-name {
-  justify-content: flex-start;
-  width: auto;
-  max-width: 100%;
-  min-height: 0;
-  padding: 0;
-  overflow: hidden;
-  border-radius: 0;
-  background: transparent;
-  font-size: 0.84rem;
-  text-overflow: ellipsis;
-  text-shadow: none;
-  white-space: nowrap;
-}
-
-.app-icon-desc {
-  display: -webkit-box;
-  overflow: hidden;
-  color: var(--text-muted);
-  font-family: var(--sans);
-  font-size: 0.7rem;
-  line-height: 1.35;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-
-.app-icon.app-icon-list .app-icon-status {
-  top: 10px;
-  right: 10px;
-}
-
-/* ==========================================================================
    상단 헤더: 주요 코인 실시간 전광판(마퀴)
    ========================================================================== */
 .crypto-ticker {
@@ -5134,5 +4903,303 @@ body::before {
   .scheduler-title-input {
     flex-basis: 100%;
     order: -1;
+  }
+}
+
+/* ==========================================================================
+   Workstation 패널 닫기 버튼 (달력 헤더 우측 ×)
+   ========================================================================== */
+.workstation-close {
+  margin-left: 6px;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+/* ==========================================================================
+   Neon Pulse 테마 — 다크 배경 + 네온 그리드 + 번쩍이는 테두리/글로우
+   아이콘 테두리, 마우스 커서, 작업표시줄, 창 테두리 전부 네온으로 빛난다.
+   ========================================================================== */
+.desktop-shell.wallpaper-neon {
+  --neon-pink: #ff2fd6;
+  --neon-cyan: #22e6ff;
+  --neon-purple: #a855f7;
+  --wallpaper-scrim: rgba(0, 0, 0, 0);
+  --wallpaper-gradient:
+    radial-gradient(circle at 14% 18%, rgba(255, 47, 214, 0.2), transparent 38%),
+    radial-gradient(circle at 86% 12%, rgba(34, 230, 255, 0.18), transparent 40%),
+    radial-gradient(circle at 50% 96%, rgba(168, 85, 247, 0.24), transparent 46%),
+    linear-gradient(180deg, #05060f 0%, #090a1c 58%, #10082a 100%);
+}
+
+/* 네온 그리드 라인 (기존 흰 격자 → 시안/마젠타 격자) */
+.desktop-shell.wallpaper-neon::before {
+  background:
+    linear-gradient(rgba(34, 230, 255, 0.32) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 47, 214, 0.26) 1px, transparent 1px);
+  background-size: 52px 52px;
+  opacity: 0.34;
+  animation: neonGridFlicker 5.5s ease-in-out infinite;
+}
+
+/* 네온 오브 (배경 광원) */
+.desktop-shell.wallpaper-neon::after {
+  background:
+    radial-gradient(circle at 20% 24%, rgba(255, 47, 214, 0.4), transparent 24%),
+    radial-gradient(circle at 80% 18%, rgba(34, 230, 255, 0.36), transparent 26%),
+    radial-gradient(circle at 56% 82%, rgba(168, 85, 247, 0.38), transparent 30%);
+  filter: blur(16px);
+  opacity: 0.85;
+}
+
+/* --- 데스크탑 텍스트: 다크 배경 위 가독성 확보 --- */
+.wallpaper-neon .desktop-icons-header h1 {
+  color: #eaf8ff;
+  text-shadow:
+    0 0 8px rgba(34, 230, 255, 0.65),
+    0 0 22px rgba(34, 230, 255, 0.35);
+}
+
+.wallpaper-neon .desktop-icons-header span {
+  color: rgba(214, 240, 255, 0.66);
+}
+
+/* --- 아이콘: 네온 테두리 + 호버 글로우 --- */
+.wallpaper-neon .app-icon-visual,
+.wallpaper-neon .app-icon.is-system-icon .app-icon-visual,
+.wallpaper-neon .folder-icon,
+.wallpaper-neon .detail-icon {
+  border-color: rgba(34, 230, 255, 0.55);
+  background: rgba(10, 14, 34, 0.6);
+  box-shadow:
+    0 0 10px rgba(34, 230, 255, 0.4),
+    0 0 24px rgba(255, 47, 214, 0.16),
+    inset 0 0 12px rgba(34, 230, 255, 0.12);
+  animation: neonIconBreath 3.2s ease-in-out infinite alternate;
+}
+
+.wallpaper-neon .app-icon:nth-child(even) .app-icon-visual {
+  border-color: rgba(255, 47, 214, 0.55);
+  box-shadow:
+    0 0 10px rgba(255, 47, 214, 0.42),
+    0 0 24px rgba(34, 230, 255, 0.16),
+    inset 0 0 12px rgba(255, 47, 214, 0.12);
+  animation-delay: -1.6s;
+}
+
+.wallpaper-neon .app-icon:hover,
+.wallpaper-neon .app-icon.is-selected {
+  border-color: rgba(34, 230, 255, 0.8);
+  background: rgba(34, 230, 255, 0.1);
+  box-shadow:
+    0 0 14px rgba(34, 230, 255, 0.55),
+    0 0 36px rgba(255, 47, 214, 0.3);
+}
+
+.wallpaper-neon .app-icon-name {
+  background: rgba(6, 10, 28, 0.78);
+  color: #e8fbff;
+  text-shadow: 0 0 6px rgba(34, 230, 255, 0.6);
+}
+
+/* --- 창: 네온 테두리 + 포커스 시 펄스 --- */
+.wallpaper-neon .window-panel {
+  border-color: rgba(34, 230, 255, 0.5);
+  box-shadow:
+    var(--glass-highlight),
+    0 0 12px rgba(34, 230, 255, 0.35),
+    0 0 34px rgba(255, 47, 214, 0.16),
+    0 18px 40px rgba(0, 0, 0, 0.5);
+}
+
+.wallpaper-neon .window-panel.is-focused {
+  border-color: rgba(34, 230, 255, 0.85);
+  animation: neonWindowPulse 2.6s ease-in-out infinite alternate;
+}
+
+.wallpaper-neon .window-titlebar,
+.wallpaper-neon .window-panel:not(.is-focused) .window-titlebar {
+  border-bottom-color: rgba(34, 230, 255, 0.35);
+}
+
+/* --- 작업표시줄: 네온 프레임 + 흐르는 광 --- */
+.wallpaper-neon .taskbar {
+  border-color: rgba(255, 47, 214, 0.55);
+  box-shadow:
+    var(--glass-highlight),
+    0 0 14px rgba(255, 47, 214, 0.4),
+    0 0 38px rgba(34, 230, 255, 0.22),
+    0 18px 42px rgba(0, 0, 0, 0.55);
+  animation: neonTaskbarPulse 3.4s ease-in-out infinite alternate;
+}
+
+.wallpaper-neon .start-button {
+  border-color: rgba(34, 230, 255, 0.6);
+  box-shadow: 0 0 10px rgba(34, 230, 255, 0.35);
+}
+
+.wallpaper-neon .start-button:hover {
+  box-shadow:
+    0 0 16px rgba(34, 230, 255, 0.6),
+    0 0 30px rgba(255, 47, 214, 0.3);
+}
+
+.wallpaper-neon .taskbar-app {
+  border-color: rgba(34, 230, 255, 0.4);
+}
+
+.wallpaper-neon .taskbar-app:hover {
+  border-color: rgba(255, 47, 214, 0.7);
+  box-shadow:
+    0 0 12px rgba(255, 47, 214, 0.5),
+    0 0 26px rgba(34, 230, 255, 0.3);
+}
+
+.wallpaper-neon .taskbar-window.is-active {
+  border-color: rgba(34, 230, 255, 0.7);
+  box-shadow: 0 0 10px rgba(34, 230, 255, 0.4);
+}
+
+/* --- 상단 메뉴바 --- */
+.wallpaper-neon .top-menu-bar {
+  border-bottom-color: rgba(34, 230, 255, 0.45);
+  box-shadow:
+    var(--glass-highlight),
+    0 0 16px rgba(34, 230, 255, 0.25),
+    0 8px 28px rgba(0, 0, 0, 0.5);
+}
+
+.wallpaper-neon .os-brand {
+  text-shadow:
+    0 0 8px rgba(34, 230, 255, 0.75),
+    0 0 20px rgba(255, 47, 214, 0.4);
+  animation: neonTextFlicker 4.8s steps(1, end) infinite;
+}
+
+/* --- 미니 오디오 독 / 달력 패널도 살짝 네온 림 --- */
+.wallpaper-neon .local-audio-dock,
+.wallpaper-neon .desktop-identity-panel {
+  border-color: rgba(168, 85, 247, 0.5);
+  box-shadow:
+    var(--glass-highlight),
+    0 0 12px rgba(168, 85, 247, 0.35),
+    0 16px 38px rgba(0, 0, 0, 0.5);
+}
+
+/* --- 마우스 커서: 네온 광선 커서 + 글로우 링 --- */
+body.theme-neon {
+  cursor: crosshair;
+}
+
+body.theme-neon .glass-cursor-sheen {
+  background: radial-gradient(
+    240px circle at var(--glass-cx) var(--glass-cy),
+    rgba(255, 47, 214, 0.3),
+    rgba(34, 230, 255, 0.18) 36%,
+    transparent 64%
+  );
+}
+
+body.theme-neon .glass-cursor-lens {
+  box-shadow:
+    inset 0 0 40px rgba(34, 230, 255, 0.14),
+    inset 0 0 90px rgba(255, 47, 214, 0.08);
+  animation: neonCursorHue 6s linear infinite;
+}
+
+/* --- System Folder 벽지 선택 스와치 --- */
+.wallpaper-option.wallpaper-neon .wallpaper-preview {
+  background:
+    linear-gradient(rgba(34, 230, 255, 0.5) 1px, transparent 1px) 0 0 / 10px 10px,
+    linear-gradient(90deg, rgba(255, 47, 214, 0.45) 1px, transparent 1px) 0 0 / 10px 10px,
+    linear-gradient(180deg, #05060f, #10082a);
+  box-shadow: inset 0 0 10px rgba(34, 230, 255, 0.4);
+}
+
+/* --- 네온 키프레임 --- */
+@keyframes neonWindowPulse {
+  0% {
+    box-shadow:
+      var(--glass-highlight),
+      0 0 10px rgba(34, 230, 255, 0.4),
+      0 0 26px rgba(255, 47, 214, 0.2),
+      0 24px 56px rgba(0, 0, 0, 0.55);
+  }
+  100% {
+    box-shadow:
+      var(--glass-highlight),
+      0 0 20px rgba(34, 230, 255, 0.7),
+      0 0 52px rgba(255, 47, 214, 0.42),
+      0 24px 56px rgba(0, 0, 0, 0.55);
+  }
+}
+
+@keyframes neonTaskbarPulse {
+  0% {
+    box-shadow:
+      var(--glass-highlight),
+      0 0 10px rgba(255, 47, 214, 0.3),
+      0 0 26px rgba(34, 230, 255, 0.16),
+      0 18px 42px rgba(0, 0, 0, 0.55);
+  }
+  100% {
+    box-shadow:
+      var(--glass-highlight),
+      0 0 20px rgba(255, 47, 214, 0.58),
+      0 0 50px rgba(34, 230, 255, 0.34),
+      0 18px 42px rgba(0, 0, 0, 0.55);
+  }
+}
+
+@keyframes neonIconBreath {
+  0% {
+    box-shadow:
+      0 0 8px rgba(34, 230, 255, 0.3),
+      0 0 18px rgba(255, 47, 214, 0.12),
+      inset 0 0 10px rgba(34, 230, 255, 0.1);
+  }
+  100% {
+    box-shadow:
+      0 0 14px rgba(34, 230, 255, 0.55),
+      0 0 32px rgba(255, 47, 214, 0.26),
+      inset 0 0 14px rgba(34, 230, 255, 0.16);
+  }
+}
+
+@keyframes neonGridFlicker {
+  0%, 100% { opacity: 0.34; }
+  6% { opacity: 0.22; }
+  9% { opacity: 0.4; }
+  48% { opacity: 0.3; }
+  52% { opacity: 0.42; }
+  74% { opacity: 0.26; }
+  78% { opacity: 0.38; }
+}
+
+@keyframes neonTextFlicker {
+  0%, 100% { opacity: 1; }
+  7% { opacity: 0.72; }
+  8% { opacity: 1; }
+  42% { opacity: 1; }
+  43% { opacity: 0.6; }
+  45% { opacity: 1; }
+  81% { opacity: 0.82; }
+  82% { opacity: 1; }
+}
+
+@keyframes neonCursorHue {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+/* 모션 최소화 환경에서는 네온 펄스/플리커 정지(정적인 글로우는 유지) */
+@media (prefers-reduced-motion: reduce) {
+  .wallpaper-neon .window-panel.is-focused,
+  .wallpaper-neon .taskbar,
+  .wallpaper-neon .app-icon-visual,
+  .wallpaper-neon .app-icon.is-system-icon .app-icon-visual,
+  .wallpaper-neon.desktop-shell::before,
+  .wallpaper-neon .os-brand,
+  body.theme-neon .glass-cursor-lens {
+    animation: none;
   }
 }

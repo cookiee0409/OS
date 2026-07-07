@@ -22,26 +22,6 @@
       system: true,
     },
     {
-      id: "snippets",
-      name: "Snippets",
-      category: "System / Clipboard",
-      status: "LIVE",
-      icon: "./assets/icons/card_index_dividers_3d.png",
-      description: "Search, save, and copy wallet addresses, links, and repeated text.",
-      url: "#",
-      system: true,
-    },
-    {
-      id: "mini-browser",
-      name: "Mini Browser",
-      category: "System / Preview",
-      status: "LIVE",
-      icon: "./assets/icons/globe_showing_europe-africa_3d.png",
-      description: "Preview project URLs in desktop, tablet, and phone frames.",
-      url: "#",
-      system: true,
-    },
-    {
       id: "calculator",
       name: "Calculator",
       category: "System / Utility",
@@ -58,6 +38,18 @@
       (app) => !baseApps.some((existingApp) => existingApp.id === app.id),
     ),
   ];
+  // Workstation(달력 패널)은 창이 아니라 데스크탑 패널이므로 apps 목록에는 넣지 않고,
+  // 좌측 System Disk 컬럼에 토글용 아이콘으로만 노출한다.
+  const workstationIconApp = {
+    id: "workstation",
+    name: "Workstation",
+    category: "System / Desktop",
+    status: "LIVE",
+    icon: "🖥️",
+    description: "CookieLab Workstation 달력 패널을 켜거나 끕니다.",
+    url: "#",
+    system: true,
+  };
   const environmentStorageKey = "cookielab-os-environment";
   const wallpaperReleaseId = "light-paint-space-2026-07-07";
   const windowLayoutStorageKey = "cookielab-os-window-layout";
@@ -66,8 +58,6 @@
   const petStorageKey = "cookielab-os-pet";
   const scheduleStorageKey = "cookielab-os-schedules";
   const notesStorageKey = "cookielab-os-notes";
-  const snippetsStorageKey = "cookielab-os-snippets";
-  const browserStorageKey = "cookielab-os-browser";
   const customWallpaperDbName = "cookielab-os-assets";
   const customWallpaperStoreName = "wallpapers";
   const customWallpaperKey = "active";
@@ -123,6 +113,11 @@
       id: "night",
       name: "Violet Night",
       description: "짙은 남색과 보라, 핑크가 흐르는 야간형 배경",
+    },
+    {
+      id: "neon",
+      name: "Neon Pulse",
+      description: "네온 그리드와 사이버 글로우가 번쩍이는 다크 테마",
     },
   ];
 
@@ -307,6 +302,7 @@
     memorySaver: true,
     memorySaverDelay: 180_000,
     scale: 1,
+    workstation: true,
   };
 
   const defaultMusic = {
@@ -363,6 +359,10 @@
             : defaultEnvironment.memorySaver,
         memorySaverDelay,
         scale,
+        workstation:
+          typeof parsed.workstation === "boolean"
+            ? parsed.workstation
+            : defaultEnvironment.workstation,
       };
     } catch {
       return { ...defaultEnvironment };
@@ -485,71 +485,6 @@
     }
   }
 
-  function defaultSnippets() {
-    return [
-      {
-        id: "snip-wallet",
-        label: "Wallet Address",
-        value: "0x0000...0000",
-        tag: "wallet",
-      },
-      {
-        id: "snip-dashboard",
-        label: "CookieLab OS",
-        value: "https://cookie-ipo.vercel.app",
-        tag: "link",
-      },
-      {
-        id: "snip-contact",
-        label: "Contact",
-        value: "hello@cookielab.local",
-        tag: "contact",
-      },
-    ];
-  }
-
-  function loadSnippets() {
-    try {
-      const parsed = JSON.parse(localStorage.getItem(snippetsStorageKey) || "null");
-      if (!Array.isArray(parsed)) {
-        return defaultSnippets();
-      }
-
-      const snippets = parsed
-        .filter((item) => item && typeof item.value === "string")
-        .map((item) => ({
-          id: String(item.id || `snip-${Math.random().toString(36).slice(2, 8)}`),
-          label: String(item.label || "Untitled").slice(0, 60),
-          value: item.value,
-          tag: String(item.tag || "general").slice(0, 24),
-        }));
-
-      return snippets.length ? snippets : defaultSnippets();
-    } catch {
-      return defaultSnippets();
-    }
-  }
-
-  function loadBrowserState() {
-    try {
-      const parsed = JSON.parse(localStorage.getItem(browserStorageKey) || "{}");
-      const url = typeof parsed.url === "string" && /^https?:\/\//i.test(parsed.url)
-        ? parsed.url
-        : "https://cookie-ipo.vercel.app";
-      return {
-        url,
-        device: ["desktop", "tablet", "phone"].includes(parsed.device)
-          ? parsed.device
-          : "desktop",
-      };
-    } catch {
-      return {
-        url: "https://cookie-ipo.vercel.app",
-        device: "desktop",
-      };
-    }
-  }
-
   const state = {
     bootPhase: "booting",
     selectedAppId: "",
@@ -586,16 +521,6 @@
       history: [],
     },
     notes: loadNotes(),
-    snippets: {
-      items: loadSnippets(),
-      query: "",
-      draft: {
-        label: "",
-        value: "",
-        tag: "general",
-      },
-    },
-    browser: loadBrowserState(),
     customWallpaper: {
       dataUrl: "",
       name: "",
@@ -734,8 +659,6 @@
     "music-player": { x: 260, y: 52, width: 500, height: 690 },
     terminal: { x: 180, y: 92, width: 680, height: 460 },
     notes: { x: 220, y: 96, width: 540, height: 520 },
-    snippets: { x: 250, y: 112, width: 620, height: 520 },
-    "mini-browser": { x: 180, y: 78, width: 840, height: 620 },
     calculator: { x: 320, y: 126, width: 360, height: 520 },
     "app-detail": { x: 340, y: 126, width: 500, height: 430 },
     scheduler: { x: 360, y: 360, width: 440, height: 326 },
@@ -745,8 +668,6 @@
     "music-player",
     "terminal",
     "notes",
-    "snippets",
-    "mini-browser",
     "calculator",
   ]);
 
@@ -1505,22 +1426,6 @@
     }
   }
 
-  function saveSnippets() {
-    try {
-      localStorage.setItem(snippetsStorageKey, JSON.stringify(state.snippets.items));
-    } catch {
-      /* localStorage 실패는 조용히 무시한다. */
-    }
-  }
-
-  function saveBrowserState() {
-    try {
-      localStorage.setItem(browserStorageKey, JSON.stringify(state.browser));
-    } catch {
-      /* localStorage 실패는 조용히 무시한다. */
-    }
-  }
-
   function normalizeCustomWallpaperRecord(record) {
     if (
       !record ||
@@ -1778,6 +1683,12 @@
   function applyEnvironment() {
     const rootStyle = document.documentElement.style;
     rootStyle.fontSize = `${Math.round(state.environment.scale * 100)}%`;
+
+    // 네온 테마는 커서 필드 등 .desktop-shell 밖 요소도 물들여야 하므로 body 클래스로 표시.
+    document.body.classList.toggle(
+      "theme-neon",
+      state.environment.wallpaperEnabled && state.environment.wallpaper === "neon",
+    );
 
     if (state.customWallpaper.dataUrl) {
       rootStyle.setProperty(
@@ -2675,31 +2586,20 @@
     return Object.values(state.windows).some((win) => win.appId === appId);
   }
 
-  function AppIcon(app, variant = "grid") {
+  function AppIcon(app) {
     // 창이 열려 있는 모든 앱 아이콘에 선택 표시(마지막 클릭만이 아니라).
-    const selected = appHasOpenWindow(app.id) ? " is-selected" : "";
+    // Workstation 아이콘은 창이 아니라 데스크탑 패널 표시 여부를 따라간다.
+    const isOpen =
+      app.id === "workstation"
+        ? state.environment.workstation
+        : appHasOpenWindow(app.id);
+    const selected = isOpen ? " is-selected" : "";
     const systemIcon = app.system ? " is-system-icon" : "";
     const tone = statusMeta[app.status] || "archived";
-
-    if (variant === "list") {
-      return `
-        <button
-          class="app-icon app-icon-list${selected}${systemIcon}"
-          type="button"
-          data-action="select-app"
-          data-app-id="${escapeHtml(app.id)}"
-          aria-label="${escapeHtml(app.name)} 소개 창 열기"
-          title="${escapeHtml(app.name)}"
-        >
-          <span class="app-icon-status status-${tone}" aria-label="${escapeHtml(app.status)}"></span>
-          <span class="app-icon-visual" aria-hidden="true">${IconAsset(app.icon)}</span>
-          <span class="app-icon-list-text">
-            <span class="app-icon-name">${escapeHtml(app.name)}</span>
-            <span class="app-icon-desc">${escapeHtml(app.description || app.category || "")}</span>
-          </span>
-        </button>
-      `;
-    }
+    const label =
+      app.id === "workstation"
+        ? `Workstation 패널 ${isOpen ? "끄기" : "켜기"}`
+        : `${app.name} 소개 창 열기`;
 
     return `
       <button
@@ -2707,7 +2607,7 @@
         type="button"
         data-action="select-app"
         data-app-id="${escapeHtml(app.id)}"
-        aria-label="${escapeHtml(app.name)} 소개 창 열기"
+        aria-label="${escapeHtml(label)}"
         title="${escapeHtml(app.name)}"
       >
         <span class="app-icon-status status-${tone}" aria-label="${escapeHtml(app.status)}"></span>
@@ -2718,11 +2618,7 @@
   }
 
   function DesktopIconColumn({ id, title, subtitle, side, apps: columnApps }) {
-    // 우측(프로젝트) 컬럼은 아이콘+설명 리스트형, 좌측은 기존 그리드형.
-    const isList = side === "right";
-    const icons = columnApps
-      .map((app) => AppIcon(app, isList ? "list" : "grid"))
-      .join("");
+    const icons = columnApps.map((app) => AppIcon(app)).join("");
 
     return `
       <section class="desktop-icons desktop-icons-${escapeHtml(side)}" aria-labelledby="${escapeHtml(id)}-title">
@@ -2730,7 +2626,7 @@
           <h1 id="${escapeHtml(id)}-title">${escapeHtml(title)}</h1>
           <span>${escapeHtml(subtitle)}</span>
         </div>
-        <div id="${escapeHtml(id)}-grid" class="app-grid${isList ? " app-list" : ""}">
+        <div id="${escapeHtml(id)}-grid" class="app-grid">
           ${icons}
         </div>
       </section>
@@ -2811,6 +2707,13 @@
             <span class="calendar-title" aria-live="polite">${monthLabel}</span>
             <button type="button" class="calendar-nav-button" data-action="calendar-next-month" aria-label="다음 달">›</button>
             <button type="button" class="calendar-today-button" data-action="calendar-today">오늘</button>
+            <button
+              type="button"
+              class="calendar-nav-button workstation-close"
+              data-action="toggle-workstation"
+              aria-label="Workstation 패널 닫기"
+              title="Workstation 패널 닫기"
+            >×</button>
           </div>
         </div>
         <div class="calendar-weekdays" aria-hidden="true">${weekdayHeader}</div>
@@ -2961,6 +2864,7 @@
           <div class="toggle-list">
             ${SettingToggle("grid", "Glass Grid", "배경의 미세한 유리 격자 패턴을 켜거나 끕니다.")}
             ${SettingToggle("glow", "Ambient Orbs", "배경의 은은한 컬러 글로우를 켜거나 끕니다.")}
+            ${SettingToggle("workstation", "Workstation Panel", "데스크탑 중앙의 CookieLab Workstation 달력 패널을 켜거나 끕니다.")}
             ${DesktopPetToggle()}
           </div>
         </section>
@@ -3451,149 +3355,6 @@
     });
   }
 
-  function SnippetsWindow(app, windowState) {
-    const snippets = filteredSnippets();
-    const items = snippets.length
-      ? snippets
-          .map(
-            (item) => `
-              <li class="snippet-item">
-                <div class="snippet-main">
-                  <span class="snippet-tag">${escapeHtml(item.tag)}</span>
-                  <strong>${escapeHtml(item.label)}</strong>
-                  <code>${escapeHtml(item.value)}</code>
-                </div>
-                <div class="snippet-actions">
-                  <button class="retro-button" type="button" data-action="copy-snippet" data-snippet-id="${escapeHtml(item.id)}">Copy</button>
-                  <button class="retro-button ghost" type="button" data-action="delete-snippet" data-snippet-id="${escapeHtml(item.id)}">Delete</button>
-                </div>
-              </li>
-            `,
-          )
-          .join("")
-      : '<li class="snippet-empty">No snippets match this search.</li>';
-
-    return WindowPanel({
-      id: windowState.id,
-      title: app.name,
-      className: "snippets-window",
-      closeAction: "close-detail",
-      focusable: true,
-      windowState,
-      children: `
-        <input
-          class="snippet-search"
-          data-action="set-snippet-query"
-          data-volatile-key="snippet-search"
-          value="${escapeHtml(state.snippets.query)}"
-          placeholder="Search snippets"
-          aria-label="Search snippets"
-        />
-        <ul class="snippet-list">${items}</ul>
-        <form class="snippet-form" data-snippet-form autocomplete="off">
-          <input
-            data-action="update-snippet-draft"
-            data-field="label"
-            data-volatile-key="snippet-label"
-            value="${escapeHtml(state.snippets.draft.label)}"
-            placeholder="Label"
-            aria-label="Snippet label"
-            maxlength="60"
-          />
-          <input
-            data-action="update-snippet-draft"
-            data-field="tag"
-            data-volatile-key="snippet-tag"
-            value="${escapeHtml(state.snippets.draft.tag)}"
-            placeholder="Tag"
-            aria-label="Snippet tag"
-            maxlength="24"
-          />
-          <textarea
-            data-action="update-snippet-draft"
-            data-field="value"
-            data-volatile-key="snippet-value"
-            placeholder="Value"
-            aria-label="Snippet value"
-          >${escapeHtml(state.snippets.draft.value)}</textarea>
-          <button class="retro-button primary" type="submit">Save Snippet</button>
-        </form>
-      `,
-      actions: `
-        <button class="retro-button ghost" type="button" data-action="close-detail">Close</button>
-      `,
-    });
-  }
-
-  function MiniBrowserWindow(app, windowState) {
-    const deviceButtons = [
-      { id: "desktop", label: "Desktop" },
-      { id: "tablet", label: "Tablet" },
-      { id: "phone", label: "Phone" },
-    ]
-      .map(
-        (device) => `
-          <button
-            class="segmented-option${state.browser.device === device.id ? " is-active" : ""}"
-            type="button"
-            data-action="set-browser-device"
-            data-device="${device.id}"
-            aria-pressed="${state.browser.device === device.id ? "true" : "false"}"
-          >${device.label}</button>
-        `,
-      )
-      .join("");
-    const presets = apps
-      .filter((item) => !item.system && safeExternalUrl(item.url) !== "#")
-      .slice(0, 6)
-      .map(
-        (item) => `
-          <button type="button" class="browser-preset" data-action="set-browser-url" data-url="${escapeHtml(item.url)}">
-            ${escapeHtml(item.name)}
-          </button>
-        `,
-      )
-      .join("");
-
-    return WindowPanel({
-      id: windowState.id,
-      title: app.name,
-      className: "mini-browser-window",
-      closeAction: "close-detail",
-      focusable: true,
-      windowState,
-      children: `
-        <form class="browser-toolbar" data-browser-form autocomplete="off">
-          <input
-            class="browser-url-input"
-            data-volatile-key="browser-url"
-            value="${escapeHtml(state.browser.url)}"
-            aria-label="Preview URL"
-          />
-          <button class="retro-button primary" type="submit">Go</button>
-          <a class="retro-button ghost" href="${escapeHtml(state.browser.url)}" target="_blank" rel="noreferrer">Open</a>
-        </form>
-        <div class="browser-device-control segmented-control" role="group" aria-label="Preview device">
-          ${deviceButtons}
-        </div>
-        <div class="browser-presets">${presets}</div>
-        <div class="browser-preview browser-preview-${escapeHtml(state.browser.device)}">
-          <iframe
-            class="browser-preview-frame"
-            src="${escapeHtml(state.browser.url)}"
-            title="Mini browser preview"
-            loading="lazy"
-            referrerpolicy="no-referrer"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-          ></iframe>
-        </div>
-      `,
-      actions: `
-        <button class="retro-button ghost" type="button" data-action="close-detail">Close</button>
-      `,
-    });
-  }
-
   function CalculatorWindow(app, windowState) {
     const buttons = [
       ["clear", "C"], ["backspace", "⌫"], ["%", "%"], ["/", "÷"],
@@ -4056,14 +3817,6 @@
       return NotesWindow(app, windowState);
     }
 
-    if (windowState.kind === "snippets" && app) {
-      return SnippetsWindow(app, windowState);
-    }
-
-    if (windowState.kind === "mini-browser" && app) {
-      return MiniBrowserWindow(app, windowState);
-    }
-
     if (windowState.kind === "calculator" && app) {
       return CalculatorWindow(app, windowState);
     }
@@ -4082,6 +3835,13 @@
 
   function Desktop() {
     const systemApps = apps.filter((app) => app.system);
+    // Workstation 토글 아이콘은 Music Player 바로 아래에 배치한다.
+    const musicIndex = systemApps.findIndex((app) => app.id === "music-player");
+    systemApps.splice(
+      musicIndex >= 0 ? musicIndex + 1 : systemApps.length,
+      0,
+      workstationIconApp,
+    );
     const projectApps = apps.filter((app) => !app.system);
     const environment = state.environment;
     const desktopClasses = [
@@ -4107,7 +3867,7 @@
               apps: systemApps,
             })}
             <div class="center-stack">
-              ${DesktopIdentityPanel()}
+              ${environment.workstation ? DesktopIdentityPanel() : ""}
             </div>
             ${DesktopIconColumn({
               id: "app",
@@ -4219,6 +3979,11 @@
   }
 
   function selectApp(id) {
+    if (id === "workstation") {
+      toggleWorkstation();
+      return;
+    }
+
     const app = appById(id);
     if (!app) {
       return;
@@ -4655,105 +4420,6 @@
     saveNotes();
   }
 
-  function snippetsSearchQuery() {
-    return state.snippets.query.trim().toLowerCase();
-  }
-
-  function filteredSnippets() {
-    const query = snippetsSearchQuery();
-    if (!query) {
-      return state.snippets.items;
-    }
-    return state.snippets.items.filter((item) =>
-      [item.label, item.value, item.tag].some((value) =>
-        String(value).toLowerCase().includes(query),
-      ),
-    );
-  }
-
-  function updateSnippetDraft(field, value) {
-    if (!Object.prototype.hasOwnProperty.call(state.snippets.draft, field)) {
-      return;
-    }
-    state.snippets.draft[field] = String(value || "");
-  }
-
-  function addSnippetFromForm() {
-    const draft = state.snippets.draft;
-    if (!draft.label.trim() || !draft.value.trim()) {
-      state.notice = "Snippet needs a label and value.";
-      render();
-      focusWindowInput('[data-volatile-key="snippet-label"]');
-      return;
-    }
-
-    state.snippets.items.unshift({
-      id: `snip-${Date.now().toString(36)}`,
-      label: draft.label.trim(),
-      value: draft.value.trim(),
-      tag: draft.tag.trim() || "general",
-    });
-    state.snippets.draft = { label: "", value: "", tag: "general" };
-    saveSnippets();
-    render({ restoreVolatile: false });
-    focusWindowInput('[data-volatile-key="snippet-label"]');
-  }
-
-  async function copySnippet(id) {
-    const snippet = state.snippets.items.find((item) => item.id === id);
-    if (!snippet) {
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(snippet.value);
-      state.notice = "Snippet copied.";
-    } catch {
-      state.notice = "Clipboard copy failed.";
-    }
-    render();
-    focusWindowElement("snippets");
-  }
-
-  function deleteSnippet(id) {
-    state.snippets.items = state.snippets.items.filter((item) => item.id !== id);
-    saveSnippets();
-    render();
-    focusWindowElement("snippets");
-  }
-
-  function normalizeBrowserUrl(value) {
-    const trimmed = String(value || "").trim();
-    if (!trimmed) {
-      return "";
-    }
-    const withProtocol = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
-    return safeExternalUrl(withProtocol) === "#" ? "" : withProtocol;
-  }
-
-  function submitMiniBrowserUrl(value) {
-    const url = normalizeBrowserUrl(value);
-    if (!url) {
-      state.notice = "Enter a valid http or https URL.";
-      render();
-      focusWindowInput('[data-volatile-key="browser-url"]');
-      return;
-    }
-    state.browser.url = url;
-    saveBrowserState();
-    render({ restoreVolatile: false });
-    focusWindowInput('[data-volatile-key="browser-url"]');
-  }
-
-  function setMiniBrowserDevice(device) {
-    if (!["desktop", "tablet", "phone"].includes(device)) {
-      return;
-    }
-    state.browser.device = device;
-    saveBrowserState();
-    render();
-    focusWindowElement("mini-browser");
-  }
-
   function tokenizeCalculatorExpression(expression) {
     const tokens = [];
     let index = 0;
@@ -4938,6 +4604,13 @@
     selectMusicTrack(nextTrack.id);
   }
 
+  function toggleWorkstation() {
+    state.environment.workstation = !state.environment.workstation;
+    state.notice = "";
+    saveEnvironment();
+    render();
+  }
+
   function setWallpaper(id) {
     if (!wallpaperOptions.some((option) => option.id === id)) {
       return;
@@ -5009,6 +4682,7 @@
         memorySaver: Boolean(state.environment.memorySaver),
         memorySaverDelay: state.environment.memorySaverDelay,
         scale: state.environment.scale,
+        workstation: Boolean(state.environment.workstation),
       },
     };
   }
@@ -5048,6 +4722,10 @@
       scale: uiScaleOptions.some((option) => option.value === imported.scale)
         ? imported.scale
         : state.environment.scale,
+      workstation:
+        typeof imported.workstation === "boolean"
+          ? imported.workstation
+          : state.environment.workstation,
     };
   }
 
@@ -5699,26 +5377,6 @@
       return;
     }
 
-    if (action === "copy-snippet") {
-      copySnippet(trigger.dataset.snippetId);
-      return;
-    }
-
-    if (action === "delete-snippet") {
-      deleteSnippet(trigger.dataset.snippetId);
-      return;
-    }
-
-    if (action === "set-browser-device") {
-      setMiniBrowserDevice(trigger.dataset.device);
-      return;
-    }
-
-    if (action === "set-browser-url") {
-      submitMiniBrowserUrl(trigger.dataset.url);
-      return;
-    }
-
     if (action === "calculator-input") {
       inputCalculator(trigger.dataset.calcValue);
       return;
@@ -5761,6 +5419,11 @@
 
     if (action === "clear-custom-wallpaper") {
       clearCustomWallpaper();
+      return;
+    }
+
+    if (action === "toggle-workstation") {
+      toggleWorkstation();
       return;
     }
 
@@ -5853,18 +5516,6 @@
       return;
     }
 
-    if (form.matches("[data-snippet-form]")) {
-      event.preventDefault();
-      addSnippetFromForm();
-      return;
-    }
-
-    if (form.matches("[data-browser-form]")) {
-      event.preventDefault();
-      submitMiniBrowserUrl(form.querySelector(".browser-url-input")?.value);
-      return;
-    }
-
     if (!form.matches("[data-scheduler-form]")) {
       return;
     }
@@ -5893,15 +5544,6 @@
 
     if (trigger.dataset.action === "update-note-body") {
       updateActiveNoteField("body", trigger.value);
-    }
-
-    if (trigger.dataset.action === "set-snippet-query") {
-      state.snippets.query = trigger.value;
-      render();
-    }
-
-    if (trigger.dataset.action === "update-snippet-draft") {
-      updateSnippetDraft(trigger.dataset.field, trigger.value);
     }
 
     if (trigger.dataset.action === "set-command-palette-query") {
